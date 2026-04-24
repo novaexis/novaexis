@@ -195,16 +195,18 @@ Deno.serve(async (req: Request) => {
         // Tenta criar; se já existe, busca
         const { data: created, error: createErr } = await admin.auth.admin.createUser({
           email: u.email,
-          password: "Demo@2026",
+          password: demoPassword,
           email_confirm: true,
           user_metadata: { nome: u.nome },
         });
 
         let userId: string | undefined = created?.user?.id;
         if (createErr || !userId) {
-          // Buscar existente via listUsers (page-by-email não é suportado; usamos email filter)
           const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
           userId = list.users.find((x) => x.email === u.email)?.id;
+          if (userId) {
+            await admin.auth.admin.updateUserById(userId, { password: demoPassword });
+          }
         }
         if (!userId) continue;
 
@@ -240,11 +242,13 @@ Deno.serve(async (req: Request) => {
       if (!governadorId) {
         const { data: gc } = await admin.auth.admin.createUser({
           email: "governador@pa.gov.br",
-          password: "Demo@2026",
+          password: demoPassword,
           email_confirm: true,
           user_metadata: { nome: "Governador do Pará" },
         });
         governadorId = gc?.user?.id;
+      } else {
+        await admin.auth.admin.updateUserById(governadorId, { password: demoPassword });
       }
       if (governadorId && estado) {
         await admin.from("profiles").upsert(
