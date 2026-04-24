@@ -52,17 +52,71 @@ const ALERTAS_TEMPLATE = [
   { titulo: "Prestação de contas LRF Q1", tipo: "obrigacao_legal", valor: null, dias: 22 },
 ];
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function generatePassword(): string {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  const b64 = btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "A")
+    .replace(/\//g, "B")
+    .replace(/=/g, "");
+  return `Demo!${b64}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // 1) Verificar JWT do chamador
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
+
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const result = { tenants: 0, users: 0, demandas: 0, kpis: 0, alertas: 0 };
+    // 2) Confirmar role superadmin server-side
+    const { data: roleRow, error: roleErr } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id)
+      .eq("role", "superadmin")
+      .maybeSingle();
+    if (roleErr || !roleRow) {
+      return jsonResponse({ error: "Forbidden: superadmin role required" }, 403);
+    }
+
+    // 3) Senha de demo aleatória por execução
+    const demoPassword = generatePassword();
+
+    const result = {
+      tenants: 0,
+      users: 0,
+      demandas: 0,
+      kpis: 0,
+      alertas: 0,
+      demoPassword,
+    };
 
     // 1) Estado tenant
     let { data: estado } = await admin
