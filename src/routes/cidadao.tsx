@@ -57,27 +57,22 @@ function CidadaoHome() {
 
   async function load() {
     setLoading(true);
-    const tasks: Promise<unknown>[] = [];
-    if (profile?.tenant_id) {
-      tasks.push(
-        supabase
+    const tenantPromise = profile?.tenant_id
+      ? supabase
           .from("tenants")
           .select("nome")
           .eq("id", profile.tenant_id)
           .maybeSingle()
-          .then(({ data }) => setTenantNome(data?.nome ?? "")),
-      );
-    }
-    tasks.push(
-      supabase
-        .from("demandas")
-        .select("id, protocolo, titulo, status, created_at")
-        .eq("cidadao_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(10)
-        .then(({ data }) => setDemandas((data ?? []) as DemandaItem[])),
-    );
-    await Promise.all(tasks);
+      : Promise.resolve({ data: null });
+    const demandasPromise = supabase
+      .from("demandas")
+      .select("id, protocolo, titulo, status, created_at")
+      .eq("cidadao_id", user!.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    const [tenantRes, demandasRes] = await Promise.all([tenantPromise, demandasPromise]);
+    setTenantNome(tenantRes.data?.nome ?? "");
+    setDemandas((demandasRes.data ?? []) as DemandaItem[]);
     setLoading(false);
   }
 

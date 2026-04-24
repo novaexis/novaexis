@@ -9,12 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SecretariaRouteImport } from './routes/secretaria'
+import { Route as PrefeitoRouteImport } from './routes/prefeito'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GovernadorRouteImport } from './routes/governador'
+import { Route as CidadaoRouteImport } from './routes/cidadao'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SecretariaRoute = SecretariaRouteImport.update({
+  id: '/secretaria',
+  path: '/secretaria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrefeitoRoute = PrefeitoRouteImport.update({
+  id: '/prefeito',
+  path: '/prefeito',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GovernadorRoute = GovernadorRouteImport.update({
+  id: '/governador',
+  path: '/governador',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CidadaoRoute = CidadaoRouteImport.update({
+  id: '/cidadao',
+  path: '/cidadao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,37 +55,114 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/cidadao': typeof CidadaoRoute
+  '/governador': typeof GovernadorRoute
   '/login': typeof LoginRoute
+  '/prefeito': typeof PrefeitoRoute
+  '/secretaria': typeof SecretariaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/cidadao': typeof CidadaoRoute
+  '/governador': typeof GovernadorRoute
   '/login': typeof LoginRoute
+  '/prefeito': typeof PrefeitoRoute
+  '/secretaria': typeof SecretariaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/cidadao': typeof CidadaoRoute
+  '/governador': typeof GovernadorRoute
   '/login': typeof LoginRoute
+  '/prefeito': typeof PrefeitoRoute
+  '/secretaria': typeof SecretariaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/cidadao'
+    | '/governador'
+    | '/login'
+    | '/prefeito'
+    | '/secretaria'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login'
-  id: '__root__' | '/' | '/login'
+  to:
+    | '/'
+    | '/admin'
+    | '/cidadao'
+    | '/governador'
+    | '/login'
+    | '/prefeito'
+    | '/secretaria'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/cidadao'
+    | '/governador'
+    | '/login'
+    | '/prefeito'
+    | '/secretaria'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  CidadaoRoute: typeof CidadaoRoute
+  GovernadorRoute: typeof GovernadorRoute
   LoginRoute: typeof LoginRoute
+  PrefeitoRoute: typeof PrefeitoRoute
+  SecretariaRoute: typeof SecretariaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/secretaria': {
+      id: '/secretaria'
+      path: '/secretaria'
+      fullPath: '/secretaria'
+      preLoaderRoute: typeof SecretariaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prefeito': {
+      id: '/prefeito'
+      path: '/prefeito'
+      fullPath: '/prefeito'
+      preLoaderRoute: typeof PrefeitoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/governador': {
+      id: '/governador'
+      path: '/governador'
+      fullPath: '/governador'
+      preLoaderRoute: typeof GovernadorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cidadao': {
+      id: '/cidadao'
+      path: '/cidadao'
+      fullPath: '/cidadao'
+      preLoaderRoute: typeof CidadaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,7 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  CidadaoRoute: CidadaoRoute,
+  GovernadorRoute: GovernadorRoute,
   LoginRoute: LoginRoute,
+  PrefeitoRoute: PrefeitoRoute,
+  SecretariaRoute: SecretariaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
