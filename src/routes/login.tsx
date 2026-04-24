@@ -124,7 +124,7 @@ function LoginPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-2xl">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold tracking-tight">Acesso à plataforma</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -215,6 +215,38 @@ function LoginPage() {
                 </form>
               </TabsContent>
             </Tabs>
+          </Card>
+
+          <Card className="mt-4 p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold">Login rápido — Demonstração</h2>
+            </div>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Senha padrão: <code className="rounded bg-muted px-1 py-0.5">{DEMO_PASSWORD}</code>
+            </p>
+            {Array.from(new Set(DEMO_USERS.map((u) => u.group))).map((group) => (
+              <div key={group} className="mb-4 last:mb-0">
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {group}
+                </h3>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {DEMO_USERS.filter((u) => u.group === group).map((u) => (
+                    <Button
+                      key={u.email}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={submitting}
+                      onClick={() => quickLogin(u.email)}
+                      className="justify-start text-xs"
+                    >
+                      {u.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </Card>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
