@@ -53,14 +53,6 @@ export const Route = createFileRoute("/login")({
   }),
   component: LoginPage,
 });
-  head: () => ({
-    meta: [
-      { title: "Entrar — NovaeXis" },
-      { name: "description", content: "Acesse a plataforma NovaeXis." },
-    ],
-  }),
-  component: LoginPage,
-});
 
 function LoginPage() {
   const navigate = useNavigate();
