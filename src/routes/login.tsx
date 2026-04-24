@@ -94,6 +94,25 @@ function LoginPage() {
     }
   }
 
+  async function quickLogin(demoEmail: string) {
+    setSubmitting(true);
+    let { error } = await signIn(demoEmail, DEMO_PASSWORD);
+    if (error) {
+      // Tenta resetar as senhas demo e tentar de novo
+      toast.message("Preparando usuários demo...");
+      const { error: fnErr } = await supabase.functions.invoke("reset-demo-passwords");
+      if (fnErr) {
+        setSubmitting(false);
+        toast.error("Falha ao preparar demo: " + fnErr.message);
+        return;
+      }
+      ({ error } = await signIn(demoEmail, DEMO_PASSWORD));
+    }
+    setSubmitting(false);
+    if (error) toast.error(error);
+    else toast.success(`Entrando como ${demoEmail}`);
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
       <header className="border-b bg-card">
