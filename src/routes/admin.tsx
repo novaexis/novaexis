@@ -23,6 +23,7 @@ export const Route = createFileRoute("/admin")({
 function AdminPanel() {
   const [stats, setStats] = useState({ tenants: 0, users: 0, demandas: 0 });
   const [seeding, setSeeding] = useState(false);
+  const [demoPassword, setDemoPassword] = useState<string | null>(null);
 
   useEffect(() => {
     void loadStats();
@@ -49,6 +50,7 @@ function AdminPanel() {
       toast.success(
         `Seed concluído: ${data?.tenants ?? 0} municípios, ${data?.demandas ?? 0} demandas.`,
       );
+      if (data?.demoPassword) setDemoPassword(data.demoPassword);
       await loadStats();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao executar seed");
@@ -84,24 +86,28 @@ function AdminPanel() {
         <p className="mt-1 text-sm text-muted-foreground">
           Cria 3 municípios fictícios do Pará (Santarinho do Norte, Marajoense, Nova Belém
           do Tapajós) com secretarias, demandas, KPIs e alertas. Pode ser executado várias
-          vezes (idempotente).
+          vezes (idempotente). Cada execução gera uma nova senha aleatória para os
+          usuários demo.
         </p>
         <Button onClick={runSeed} disabled={seeding} className="mt-4">
           {seeding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {seeding ? "Executando…" : "Executar seed"}
         </Button>
-        <div className="mt-5 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-          <p className="mb-1 font-semibold text-foreground">Após o seed, faça login com:</p>
-          <ul className="space-y-0.5 font-mono">
-            <li>prefeito@marajoense.pa.gov.br / Demo@2026</li>
-            <li>secretario.saude@marajoense.pa.gov.br / Demo@2026</li>
-            <li>cidadao@marajoense.pa.gov.br / Demo@2026</li>
-            <li>governador@pa.gov.br / Demo@2026</li>
-          </ul>
-          <p className="mt-2 text-[11px]">
-            Os usuários são criados automaticamente pelo seed na primeira execução.
-          </p>
-        </div>
+
+        {demoPassword && (
+          <div className="mt-5 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+            <p className="mb-2 font-semibold text-foreground">
+              Senha desta execução (copie agora — não será exibida novamente após sair):
+            </p>
+            <code className="block break-all rounded bg-background px-2 py-1 font-mono text-sm">
+              {demoPassword}
+            </code>
+            <p className="mt-2 text-muted-foreground">
+              Use com os emails dos usuários demo (prefeito@…, secretario.saude@…,
+              cidadao@…, governador@pa.gov.br).
+            </p>
+          </div>
+        )}
       </Card>
     </div>
   );
