@@ -8,9 +8,51 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+const DEMO_PASSWORD = "Demo@2026";
+
+type DemoUser = { label: string; email: string; group: string };
+
+const DEMO_USERS: DemoUser[] = [
+  // Estado
+  { group: "Estado", label: "Governador do Pará", email: "governador@pa.gov.br" },
+  // Marajoense
+  { group: "Marajoense", label: "Prefeito", email: "prefeito@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Sec. Educação", email: "secretario.educacao@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Sec. Saúde", email: "secretario.saude@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Sec. Infraestrutura", email: "secretario.infraestrutura@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Sec. Assist. Social", email: "secretario.assistencia_social@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Sec. Finanças", email: "secretario.financas@marajoense.pa.gov.br" },
+  { group: "Marajoense", label: "Cidadão", email: "cidadao@marajoense.pa.gov.br" },
+  // Nova Belém do Tapajós
+  { group: "Nova Belém do Tapajós", label: "Prefeito", email: "prefeito@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Sec. Educação", email: "secretario.educacao@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Sec. Saúde", email: "secretario.saude@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Sec. Infraestrutura", email: "secretario.infraestrutura@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Sec. Assist. Social", email: "secretario.assistencia_social@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Sec. Finanças", email: "secretario.financas@nova-belem-do-tapajos.pa.gov.br" },
+  { group: "Nova Belém do Tapajós", label: "Cidadão", email: "cidadao@nova-belem-do-tapajos.pa.gov.br" },
+  // Santarinho do Norte
+  { group: "Santarinho do Norte", label: "Prefeito", email: "prefeito@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Sec. Educação", email: "secretario.educacao@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Sec. Saúde", email: "secretario.saude@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Sec. Infraestrutura", email: "secretario.infraestrutura@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Sec. Assist. Social", email: "secretario.assistencia_social@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Sec. Finanças", email: "secretario.financas@santarinho-do-norte.pa.gov.br" },
+  { group: "Santarinho do Norte", label: "Cidadão", email: "cidadao@santarinho-do-norte.pa.gov.br" },
+];
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [
+      { title: "Entrar — NovaeXis" },
+      { name: "description", content: "Acesse a plataforma NovaeXis." },
+    ],
+  }),
+  component: LoginPage,
+});
   head: () => ({
     meta: [
       { title: "Entrar — NovaeXis" },
