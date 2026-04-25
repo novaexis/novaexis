@@ -38,6 +38,7 @@ const COLUNAS = [
 export function CRMLeadsManager() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
 
   useEffect(() => {
     void carregar();
@@ -57,17 +58,42 @@ export function CRMLeadsManager() {
   }
 
   async function mudarStatus(id: string, status: string) {
+    const originalLeads = [...leads];
+    
+    // Optimistic update
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
+
     const { error } = await supabase
       .from("leads_comerciais")
       .update({ status })
       .eq("id", id);
+
     if (error) {
+      setLeads(originalLeads);
       toast.error("Falha ao atualizar");
       return;
     }
-    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)));
+    
     toast.success("Status atualizado");
   }
+
+  const handleDragStart = (leadId: string) => {
+    setDraggedLeadId(leadId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (status: string) => {
+    if (draggedLeadId) {
+      const lead = leads.find(l => l.id === draggedLeadId);
+      if (lead && lead.status !== status) {
+        void mudarStatus(draggedLeadId, status);
+      }
+      setDraggedLeadId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -83,7 +109,7 @@ export function CRMLeadsManager() {
         <div>
           <h2 className="text-base font-semibold">Pipeline comercial</h2>
           <p className="text-sm text-muted-foreground">
-            {leads.length} leads · arraste o status para mover
+            {leads.length} leads · arraste os cartões entre as colunas
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={carregar}>
@@ -91,21 +117,40 @@ export function CRMLeadsManager() {
         </Button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-5">
+      <div className="grid gap-3 lg:grid-cols-5 min-h-[500px]">
         {COLUNAS.map((col) => {
           const items = leads.filter((l) => l.status === col.id);
           return (
-            <div key={col.id} className={cn("rounded-lg border-t-2 bg-muted/30 p-2", col.cor)}>
+            <div 
+              key={col.id} 
+              className={cn(
+                "rounded-lg border-t-2 bg-muted/30 p-2 transition-colors duration-200", 
+                col.cor,
+                draggedLeadId && "hover:bg-muted/50 border-dashed"
+              )}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(col.id)}
+            >
               <div className="mb-2 flex items-center justify-between px-1">
                 <p className="text-xs font-semibold uppercase">{col.label}</p>
                 <Badge variant="secondary" className="text-xs">{items.length}</Badge>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-h-[100px]">
                 {items.length === 0 && (
-                  <p className="px-1 py-3 text-center text-xs text-muted-foreground">Vazio</p>
+                  <p className="px-1 py-3 text-center text-xs text-muted-foreground border border-dashed rounded-md">
+                    Arraste aqui
+                  </p>
                 )}
                 {items.map((l) => (
-                  <Card key={l.id} className="p-3 text-xs">
+                  <Card 
+                    key={l.id} 
+                    className={cn(
+                      "p-3 text-xs cursor-move hover:shadow-md transition-all active:scale-95",
+                      draggedLeadId === l.id && "opacity-50 grayscale"
+                    )}
+                    draggable
+                    onDragStart={() => handleDragStart(l.id)}
+                  >
                     <p className="font-semibold text-sm">{l.nome}</p>
                     {l.cargo && <p className="text-muted-foreground">{l.cargo}</p>}
                     <div className="mt-2 space-y-1 text-muted-foreground">
