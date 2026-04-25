@@ -62,6 +62,11 @@ function LandingPage() {
         style={{ background: "var(--gradient-hero)" }}
       >
         <div className="mx-auto max-w-5xl text-center text-white">
+          <div className="mb-8 flex justify-center">
+            <div className="rounded-2xl bg-white/95 px-6 py-4 shadow-xl backdrop-blur">
+              <Logo orientation="vertical" className="h-28 sm:h-32" />
+            </div>
+          </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
             <span className="h-1.5 w-1.5 rounded-full bg-warning" />
             Feito para municípios do Pará

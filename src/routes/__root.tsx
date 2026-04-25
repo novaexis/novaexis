@@ -58,7 +58,11 @@ export const Route = createRootRoute({
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Pq8jSxyLjHWdeVpJwyERRXmHqbW2/social-images/social-1777115969468-logo2_cf.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Pq8jSxyLjHWdeVpJwyERRXmHqbW2/social-images/social-1777115969468-logo2_cf.webp" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
