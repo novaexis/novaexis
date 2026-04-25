@@ -33,7 +33,7 @@ function LandingPage() {
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Logo />
+          <Logo className="h-9" />
           <nav className="hidden items-center gap-6 md:flex">
             <a href="#produto" className="text-sm text-muted-foreground hover:text-foreground">
               Produto
@@ -62,6 +62,11 @@ function LandingPage() {
         style={{ background: "var(--gradient-hero)" }}
       >
         <div className="mx-auto max-w-5xl text-center text-white">
+          <div className="mb-8 flex justify-center">
+            <div className="rounded-2xl bg-white/95 px-6 py-4 shadow-xl backdrop-blur">
+              <Logo orientation="vertical" className="h-28 sm:h-32" />
+            </div>
+          </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
             <span className="h-1.5 w-1.5 rounded-full bg-warning" />
             Feito para municípios do Pará
@@ -223,7 +228,7 @@ function LandingPage() {
 
       <footer className="border-t bg-card px-4 py-8 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-          <Logo />
+          <Logo className="h-7" />
           <p>© {new Date().getFullYear()} NovaeXis. Todos os direitos reservados.</p>
         </div>
       </footer>
