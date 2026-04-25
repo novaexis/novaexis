@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import {
   Building2,
@@ -11,7 +15,12 @@ import {
   Globe2,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  Loader2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import mockupPrefeito from "@/assets/landing-mockup-prefeito.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
