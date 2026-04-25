@@ -169,14 +169,23 @@ function SocialPage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Social Intelligence
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          O que estão falando da sua gestão nas redes e notícias
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Social Intelligence
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O que estão falando da sua gestão nas redes e notícias
+          </p>
+        </div>
+        <Link to="/prefeito/social/configurar">
+          <Button variant="outline" size="sm">
+            <Settings className="mr-2 h-4 w-4" /> Configurar fontes
+          </Button>
+        </Link>
       </header>
+
+      {tenantId && <AlertaCrise tenantId={tenantId} />}
 
       {loading ? (
         <div className="space-y-4">
@@ -188,7 +197,9 @@ function SocialPage() {
         <>
           {/* KPIs principais */}
           <section className="mb-6 grid gap-4 md:grid-cols-4">
-            <CardScore score={scoreAtual} variacao={variacao} />
+            <div className="flex items-center justify-center rounded-lg border bg-card p-4">
+              <GaugeScore score={scoreAtual} label="Score de aprovação" size={200} />
+            </div>
             <CardSent
               icon={<Smile className="h-5 w-5 text-primary" />}
               label="Positivas"
@@ -211,6 +222,22 @@ function SocialPage() {
               cls="text-foreground"
             />
           </section>
+
+          {variacao != null && (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Variação 7d:{" "}
+              <span
+                className={
+                  "inline-flex items-center gap-1 font-medium " +
+                  (variacao >= 0 ? "text-primary" : "text-destructive")
+                }
+              >
+                {variacao >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {variacao > 0 ? "+" : ""}
+                {variacao.toFixed(1)} pts
+              </span>
+            </p>
+          )}
 
           {/* Evolução do score */}
           <section className="mb-6 rounded-lg border bg-card p-4 md:p-6">
