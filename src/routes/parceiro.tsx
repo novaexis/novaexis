@@ -301,7 +301,7 @@ function ParceiroPage() {
                         <div className="flex-1">
                           <p className="font-medium">{l.nome}</p>
                           <p className="text-xs text-muted-foreground">
-                            {l.cargo} {l.municipio && `· ${l.municipio}`}
+                            {l.cargo} {l.municipio ? `· ${l.municipio}` : ""}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
                         </div>
