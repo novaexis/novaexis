@@ -44,6 +44,86 @@ export const Route = createFileRoute("/parceiro")({
     ],
   }),
   component: ParceiroPage,
+  errorComponent: ({ error, reset }) => {
+    const router = useRouter();
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/) || errorMsg.match(/line (\d+)/);
+    const lineInfo = lineMatch ? `Linha: ${lineMatch[1]}` : "Localização não identificada";
+
+    const getGuidance = (msg: string) => {
+      if (msg.includes("is not defined")) {
+        const variable = msg.match(/'(.*?)' is not defined/)?.[1] || "uma variável";
+        return `A variável ou componente "${variable}" está sendo usada mas não foi importada ou definida. Verifique os imports no topo do arquivo.`;
+      }
+      if (msg.includes("Unexpected token")) {
+        return "Erro de sintaxe. Provavelmente falta fechar um parêntese, chave ou tag JSX (como uma div ou fragmento).";
+      }
+      if (msg.includes("expected \"}\"")) {
+        return "Uma chave '}' está faltando. Verifique se todos os blocos de código e expressões JSX estão fechados corretamente.";
+      }
+      if (msg.includes("failed to resolve import")) {
+        return "Um arquivo importado não foi encontrado. Verifique se o caminho do import está correto.";
+      }
+      return "Ocorreu um erro lógico ou de execução. Verifique a sintaxe próxima à linha indicada.";
+    };
+
+    const guidance = getGuidance(errorMsg);
+
+    useEffect(() => {
+      console.error("Erro diagnóstico /parceiro:", error);
+    }, [error]);
+
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 text-center dark:bg-slate-950">
+        <div className="w-full max-w-2xl overflow-hidden rounded-xl border bg-white shadow-2xl dark:bg-slate-900 text-left">
+          <div className="flex items-center gap-2 border-b bg-destructive/10 px-6 py-4 text-destructive font-bold">
+            <AlertCircle className="h-5 w-5" />
+            <span>Erro Detectado</span>
+          </div>
+          
+          <div className="p-6">
+            <div className="mb-6 flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 border border-amber-200 dark:border-amber-900">
+              <Lightbulb className="h-5 w-5 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Sugestão de Correção:</p>
+                <p className="text-sm mt-1">{guidance}</p>
+              </div>
+            </div>
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Detalhes técnicos:</p>
+            <div className="rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200">
+              <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2 text-slate-400">
+                <span className="flex items-center gap-2">
+                  <Terminal className="h-3.5 w-3.5" />
+                  src/routes/parceiro.tsx
+                </span>
+                <span className="text-amber-400 font-bold">{lineInfo}</span>
+              </div>
+              <pre className="overflow-x-auto whitespace-pre-wrap py-2">
+                {errorMsg}
+              </pre>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  router.invalidate();
+                  reset();
+                }}
+              >
+                Recarregar e Validar
+              </Button>
+              <Button asChild>
+                <Link to="/">Voltar ao Início</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  },
 });
 
 interface Lead {
