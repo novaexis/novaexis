@@ -694,5 +694,3 @@ function ResetSenhaDialog({
     </Dialog>
   );
 }
-
-}
