@@ -211,7 +211,8 @@ async function callAIWithRetry(messages: unknown[], maxRetry = 2): Promise<Respo
   }
 }
 
-async function atualizarScoreDiario(admin: ReturnType<typeof createClient>, tenantId: string) {
+// deno-lint-ignore no-explicit-any
+async function atualizarScoreDiario(admin: any, tenantId: string) {
   const hoje = new Date().toISOString().split("T")[0];
   const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: mencoes } = await admin
