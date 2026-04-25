@@ -92,6 +92,36 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as Req;
 
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("cf-connecting-ip") ??
+      null;
+    const ua = req.headers.get("user-agent") ?? null;
+
+    async function audit(
+      action: string,
+      resource_type: string,
+      resource_id: string | null,
+      details: Record<string, unknown>,
+      tenant_id: string | null = null,
+    ) {
+      try {
+        await admin.from("audit_logs").insert({
+          actor_id: userData.user!.id,
+          actor_email: userData.user!.email ?? null,
+          action,
+          resource_type,
+          resource_id,
+          tenant_id,
+          details,
+          ip_address: ip,
+          user_agent: ua,
+        });
+      } catch (_) {
+        // Audit não deve quebrar a operação
+      }
+    }
+
     switch (body.action) {
       case "list": {
         // Lista profiles + roles (filtra por tenant/search se vier)
