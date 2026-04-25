@@ -149,6 +149,7 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate: () => void }
   const location = useLocation();
   const Icon = item.icon;
   const active = location.pathname === item.to;
+  const childActive = item.children?.some((c) => location.pathname === c.to);
 
   if (item.disabled) {
     return (
@@ -163,6 +164,43 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate: () => void }
             soon
           </span>
         </span>
+      </li>
+    );
+  }
+
+  if (item.children) {
+    return (
+      <li>
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium",
+            childActive ? "bg-primary/10 text-primary" : "text-foreground/80",
+          )}
+        >
+          <Icon className="h-4 w-4" />
+          <span className="flex-1 truncate">{item.label}</span>
+        </div>
+        <ul className="ml-7 mt-0.5 space-y-0.5 border-l pl-2">
+          {item.children.map((c) => {
+            const cActive = location.pathname === c.to;
+            return (
+              <li key={c.to}>
+                <Link
+                  to={c.to}
+                  onClick={onNavigate}
+                  className={cn(
+                    "block rounded-md px-2.5 py-1.5 text-xs transition-colors",
+                    cActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground/70 hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {c.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </li>
     );
   }
