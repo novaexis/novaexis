@@ -12,6 +12,7 @@ import { TabDemandas } from "@/components/secretaria/TabDemandas";
 import { TabIndicadores } from "@/components/secretaria/TabIndicadores";
 import { TabRelatorios } from "@/components/secretaria/TabRelatorios";
 import { VisaoGeralPlaceholder } from "@/components/secretaria/VisaoGeralPlaceholder";
+import { VisaoGeralSaude } from "@/components/secretaria/saude/VisaoGeralSaude";
 
 export const Route = createFileRoute("/painel/secretaria/$slug")({
   head: ({ params }) => {
