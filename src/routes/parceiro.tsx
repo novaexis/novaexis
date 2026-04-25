@@ -19,7 +19,7 @@ import {
 import { Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-function LocalizacaoContato({ cargo, municipio }: { cargo: string; municipio?: string | null }) {
+function LocalizacaoContato({ cargo, municipio }: { cargo: string | null; municipio?: string | null }) {
   return (
     <p className="text-xs text-muted-foreground">
       {cargo}
