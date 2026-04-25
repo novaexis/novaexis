@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, RefreshCw, Eye, Activity, Users, Building2, FileText } from "lucide-react";
+import { Loader2, RefreshCw, Eye, Activity, Users, Building2, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 type AuditLog = {
@@ -42,8 +42,6 @@ type AuditLog = {
     email: string | null;
   } | null;
 };
-
-type Tenant = { id: string; nome: string; slug: string };
 
 type UsageRow = {
   tenant_id: string;
@@ -93,49 +91,73 @@ function LogsTable() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selected, setSelected] = useState<AuditLog | null>(null);
-
-  useEffect(() => {
-    void loadLogs();
-  }, []);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const perPage = 50;
 
   async function loadLogs() {
     setLoading(true);
     try {
-      let q = supabase
-        .from("audit_logs" as any)
-        .select(`
-          *,
-          profiles:actor_id (
-            email
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(200);
+      if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+        toast.error("A data inicial não pode ser maior que a data final");
+        setLoading(false);
+        return;
+      }
 
-      if (severityFilter !== "all") q = q.eq("severity", severityFilter);
-      if (actionFilter !== "all") q = q.eq("action", actionFilter);
-      if (dateFrom) q = q.gte("created_at", `${dateFrom}T00:00:00`);
-      if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
-
-      const { data, error } = await q;
-      if (error) throw error;
-      setLogs((data ?? []) as unknown as AuditLog[]);
+      const { data, error } = await supabase.functions.invoke("get-audit-logs-admin", {
+        body: {
+          page,
+          perPage,
+          action: actionFilter === "all" ? undefined : actionFilter,
+          severity: severityFilter === "all" ? undefined : severityFilter,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+        },
+      });
+      
+      if (error) {
+        // Tratar erro padronizado da function
+        let message = "Erro ao carregar logs";
+        let code = "";
+        
+        try {
+          const errorData = await error.context?.json();
+          if (errorData?.error) {
+            message = errorData.error.message || message;
+            code = errorData.error.code ? ` [${errorData.error.code}]` : "";
+          }
+        } catch {
+          message = error.message || message;
+        }
+        
+        throw new Error(`${message}${code}`);
+      }
+      
+      setLogs((data.logs ?? []) as unknown as AuditLog[]);
+      setTotal(data.total ?? 0);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao carregar logs");
+      console.error("Erro na consulta de auditoria:", e);
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar logs via API");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    void loadLogs();
+  }, [page]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      void loadLogs();
+      if (page !== 1) setPage(1);
+      else void loadLogs();
     }, 300);
     return () => clearTimeout(timer);
   }, [severityFilter, actionFilter, dateFrom, dateTo]);
 
   const actions = useMemo(() => {
     const set = new Set<string>();
+    // Usamos os logs atuais para sugerir ações no filtro, mas idealmente viria de um enum ou query específica
     for (const l of logs) set.add(l.action);
     return Array.from(set).sort();
   }, [logs]);
@@ -151,6 +173,8 @@ function LogsTable() {
         l.target_id?.toLowerCase().includes(term),
     );
   }, [logs, search]);
+
+  const totalPages = Math.ceil(total / perPage);
 
   return (
     <Card className="p-4">
@@ -203,8 +227,32 @@ function LogsTable() {
         <Button variant="outline" size="sm" onClick={() => void loadLogs()} className="gap-2">
           <RefreshCw className="h-4 w-4" /> Atualizar
         </Button>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} registros
+      </div>
+
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            disabled={page <= 1 || loading} 
+            onClick={() => setPage(p => p - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium">Página {page} de {totalPages || 1}</span>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            disabled={page >= totalPages || loading} 
+            onClick={() => setPage(p => p + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {total} registros encontrados
         </span>
       </div>
 
