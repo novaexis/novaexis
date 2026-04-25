@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CidadaoBottomNav } from "@/components/cidadao/CidadaoBottomNav";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Loader2, MapPin, Calendar } from "lucide-react";
+import { Loader2, MapPin, Calendar, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/cidadao/saude")({
   head: () => ({
@@ -48,9 +49,16 @@ function SaudePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-5 sm:px-6">
       <h1 className="mb-1 text-xl font-bold tracking-tight">Saúde</h1>
-      <p className="mb-5 text-sm text-muted-foreground">
+      <p className="mb-4 text-sm text-muted-foreground">
         Agende consultas, exames e vacinas nas unidades do município.
       </p>
+
+      <Link to="/cidadao/saude/agendar">
+        <Button className="mb-6 w-full gap-2" size="lg">
+          <Plus className="h-4 w-4" />
+          Agendar atendimento
+        </Button>
+      </Link>
 
       <section className="mb-6">
         <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -104,9 +112,6 @@ function SaudePage() {
         </ul>
       </section>
 
-      <p className="mt-6 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-        ✨ Próximo ciclo: wizard de agendamento em 3 passos (tipo → unidade/data → confirmação).
-      </p>
     </div>
   );
 }
