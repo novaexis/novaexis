@@ -1394,6 +1394,59 @@ export type Database = {
           },
         ]
       }
+      leads_comerciais: {
+        Row: {
+          cargo: string | null
+          created_at: string
+          email: string
+          id: string
+          municipio: string | null
+          nome: string
+          observacoes: string | null
+          origem: string
+          reseller_id: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cargo?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          municipio?: string | null
+          nome: string
+          observacoes?: string | null
+          origem?: string
+          reseller_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cargo?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          municipio?: string | null
+          nome?: string
+          observacoes?: string | null
+          origem?: string
+          reseller_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_comerciais_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mapeamentos_importacao: {
         Row: {
           confirmado_at: string | null
@@ -1675,6 +1728,64 @@ export type Database = {
           },
         ]
       }
+      onboarding_checklist: {
+        Row: {
+          app_configurado: boolean
+          created_at: string
+          dados_importados: boolean
+          id: string
+          primeiro_login: boolean
+          secretarios_convidados: number
+          social_configurado: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          app_configurado?: boolean
+          created_at?: string
+          dados_importados?: boolean
+          id?: string
+          primeiro_login?: boolean
+          secretarios_convidados?: number
+          social_configurado?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          app_configurado?: boolean
+          created_at?: string
+          dados_importados?: boolean
+          id?: string
+          primeiro_login?: boolean
+          secretarios_convidados?: number
+          social_configurado?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_checklist_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "onboarding_checklist_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_checklist_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_limits: {
         Row: {
           chave: string
@@ -1786,6 +1897,55 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_limits: {
+        Row: {
+          chamadas: number
+          data: string
+          funcao: string
+          id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          chamadas?: number
+          data?: string
+          funcao: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          chamadas?: number
+          data?: string
+          funcao?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "rate_limits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_limits_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
@@ -2206,8 +2366,11 @@ export type Database = {
           populacao: number | null
           reseller_id: string | null
           slug: string
+          stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
           tipo: Database["public"]["Enums"]["tenant_tipo"]
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -2223,8 +2386,11 @@ export type Database = {
           populacao?: number | null
           reseller_id?: string | null
           slug: string
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
           tipo?: Database["public"]["Enums"]["tenant_tipo"]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -2240,8 +2406,11 @@ export type Database = {
           populacao?: number | null
           reseller_id?: string | null
           slug?: string
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
           tipo?: Database["public"]["Enums"]["tenant_tipo"]
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2544,6 +2713,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_rate_limit: {
+        Args: { p_funcao: string; p_limite: number; p_tenant_id: string }
+        Returns: boolean
+      }
       get_user_reseller: { Args: { _user_id: string }; Returns: string }
       get_user_secretaria_slug: { Args: { _user_id: string }; Returns: string }
       get_user_tenant: { Args: { _user_id: string }; Returns: string }
