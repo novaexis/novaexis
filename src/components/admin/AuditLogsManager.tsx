@@ -285,30 +285,22 @@ function LogsTable() {
                 label="Quando"
                 value={new Date(selected.created_at).toLocaleString("pt-BR")}
               />
-              <DetailRow label="Ator" value={selected.actor_email ?? "—"} />
+              <DetailRow label="Ator" value={selected.profiles?.email ?? "—"} />
               <DetailRow label="Ação" value={selected.action} mono />
-              <DetailRow
-                label="Recurso"
-                value={`${selected.resource_type}${selected.resource_id ? ` (${selected.resource_id})` : ""}`}
-                mono
-              />
-              <DetailRow
-                label="Município"
-                value={
-                  selected.tenant_id
-                    ? (tenantNameById.get(selected.tenant_id) ?? selected.tenant_id)
-                    : "—"
-                }
-              />
+              <DetailRow label="Severidade" value={selected.severity || "info"} />
+              <DetailRow label="Alvo" value={selected.target_id || "—"} mono />
               {selected.ip_address && (
                 <DetailRow label="IP" value={selected.ip_address} mono />
               )}
+              {selected.user_agent && (
+                <DetailRow label="User Agent" value={selected.user_agent} />
+              )}
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
-                  Detalhes
+                  Payload / Detalhes
                 </p>
                 <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs">
-                  {JSON.stringify(selected.details ?? {}, null, 2)}
+                  {JSON.stringify(selected.payload ?? {}, null, 2)}
                 </pre>
               </div>
             </div>
