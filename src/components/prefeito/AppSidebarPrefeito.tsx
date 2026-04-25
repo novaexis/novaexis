@@ -30,9 +30,9 @@ const NAV: NavItem[] = [
   { to: "/prefeito", label: "Dashboard", icon: LayoutDashboard },
   { to: "/prefeito/secretarias", label: "Secretarias", icon: Building2, disabled: true },
   { to: "/prefeito/captacao", label: "Captação de recursos", icon: Banknote },
-  { to: "/prefeito/benchmark", label: "Benchmark", icon: BarChart3, disabled: true },
+  { to: "/prefeito/benchmark", label: "Benchmark", icon: BarChart3 },
   { to: "/prefeito/ia", label: "IA Estratégica", icon: Brain, disabled: true },
-  { to: "/prefeito/social", label: "Social Intelligence", icon: Radio, disabled: true },
+  { to: "/prefeito/social", label: "Social Intelligence", icon: Radio },
   { to: "/prefeito/integracoes", label: "Integrações", icon: Plug, disabled: true },
 ];
 
