@@ -32,14 +32,15 @@ type AuditLog = {
   id: string;
   created_at: string;
   actor_id: string | null;
-  actor_email: string | null;
   action: string;
-  resource_type: string;
-  resource_id: string | null;
-  tenant_id: string | null;
-  details: Record<string, unknown> | null;
+  severity: string | null;
+  payload: Record<string, unknown> | null;
   ip_address: string | null;
   user_agent: string | null;
+  target_id: string | null;
+  profiles?: {
+    email: string | null;
+  } | null;
 };
 
 type Tenant = { id: string; nome: string; slug: string };
