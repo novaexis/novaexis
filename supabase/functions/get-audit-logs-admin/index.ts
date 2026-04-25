@@ -103,12 +103,23 @@ Deno.serve(async (req) => {
       query = query.eq("severity", severity);
     }
     
-    if (dateFrom) query = query.gte("created_at", `${dateFrom}T00:00:00`);
-    if (dateTo) query = query.lte("created_at", `${dateTo}T23:59:59`);
+    // Filtro de datas considerando timezone (ISO 8601)
+    // Se o cliente enviar apenas YYYY-MM-DD, tratamos como o início/fim do dia local (UTC-3 presumido ou dinâmico)
+    // No entanto, para consistência, o frontend deve enviar ISO strings completas ou usamos timestamps absolutos.
+    if (dateFrom) {
+      // Garante que é o início do dia no timezone do servidor (UTC) se vier apenas YYYY-MM-DD
+      const from = dateFrom.includes("T") ? dateFrom : `${dateFrom}T00:00:00Z`;
+      query = query.gte("created_at", from);
+    }
+    if (dateTo) {
+      // Garante que é o fim do dia no timezone do servidor (UTC) se vier apenas YYYY-MM-DD
+      const to = dateTo.includes("T") ? dateTo : `${dateTo}T23:59:59.999Z`;
+      query = query.lte("created_at", to);
+    }
 
-    const from = (page - 1) * perPage;
-    const to = from + perPage - 1;
-    query = query.range(from, to);
+    const fromIdx = (page - 1) * perPage;
+    const toIdx = fromIdx + perPage - 1;
+    query = query.range(fromIdx, toIdx);
 
     const { data, count, error } = await query;
 
