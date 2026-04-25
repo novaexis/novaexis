@@ -20,6 +20,7 @@ interface SecretariaShellProps {
   indicadores: ReactNode;
   relatorios: ReactNode;
   integracoes?: ReactNode;
+  assessoriaIA?: ReactNode;
   acoes?: ReactNode;
 }
 
