@@ -135,6 +135,9 @@ function SecretariaContent({ slug }: { slug: string }) {
           <TabIntegracoes tenantId={tenantId} secretariaSlug={slug} />
         ) : undefined
       }
+      assessoriaIA={
+        <TabAssessoriaIA secretariaSlug={slug} nomeSecretaria={meta.nome} />
+      }
     />
   );
 }
