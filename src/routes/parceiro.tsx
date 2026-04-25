@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -44,6 +44,35 @@ export const Route = createFileRoute("/parceiro")({
     ],
   }),
   component: ParceiroPage,
+  errorComponent: ({ error, reset }) => {
+    const router = useRouter();
+    useEffect(() => {
+      console.error("Erro na rota /parceiro:", error);
+    }, [error]);
+
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
+        <Logo className="mb-6 h-12" />
+        <h2 className="text-xl font-bold text-destructive">Opa! Algo deu errado no portal.</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">
+          Ocorreu um erro inesperado ao carregar suas informações. Nossa equipe já foi notificada (veja o console para detalhes técnicos).
+        </p>
+        <div className="mt-6 flex gap-3">
+          <Button 
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+          >
+            Tentar novamente
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/">Voltar ao início</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  },
 });
 
 interface Lead {
