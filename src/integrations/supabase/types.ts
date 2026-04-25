@@ -830,6 +830,57 @@ export type Database = {
           },
         ]
       }
+      resellers: {
+        Row: {
+          ativo: boolean
+          comissao_pct: number | null
+          cor_primaria: string | null
+          created_at: string
+          dominio_customizado: string | null
+          email_contato: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          observacoes: string | null
+          rodape_texto: string | null
+          slug: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          comissao_pct?: number | null
+          cor_primaria?: string | null
+          created_at?: string
+          dominio_customizado?: string | null
+          email_contato?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+          observacoes?: string | null
+          rodape_texto?: string | null
+          slug: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          comissao_pct?: number | null
+          cor_primaria?: string | null
+          created_at?: string
+          dominio_customizado?: string | null
+          email_contato?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          observacoes?: string | null
+          rodape_texto?: string | null
+          slug?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scores_aprovacao: {
         Row: {
           data: string
@@ -1234,6 +1285,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_user_reseller: { Args: { _user_id: string }; Returns: string }
       get_user_secretaria_slug: { Args: { _user_id: string }; Returns: string }
       get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_role: {
