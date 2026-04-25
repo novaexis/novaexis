@@ -302,6 +302,42 @@ export type Database = {
           },
         ]
       }
+      briefings_semanais: {
+        Row: {
+          alertas: Json | null
+          conteudo_markdown: string
+          created_at: string
+          destaques: Json | null
+          gerado_por: string | null
+          id: string
+          recomendacoes: Json | null
+          semana_referencia: string
+          tenant_id: string
+        }
+        Insert: {
+          alertas?: Json | null
+          conteudo_markdown: string
+          created_at?: string
+          destaques?: Json | null
+          gerado_por?: string | null
+          id?: string
+          recomendacoes?: Json | null
+          semana_referencia: string
+          tenant_id: string
+        }
+        Update: {
+          alertas?: Json | null
+          conteudo_markdown?: string
+          created_at?: string
+          destaques?: Json | null
+          gerado_por?: string | null
+          id?: string
+          recomendacoes?: Json | null
+          semana_referencia?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       demandas: {
         Row: {
           anexos: string[] | null
@@ -658,6 +694,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      relatorios_executivos: {
+        Row: {
+          created_at: string
+          gerado_por: string | null
+          id: string
+          periodo_fim: string
+          periodo_inicio: string
+          resumo_executivo: string | null
+          storage_path: string | null
+          tenant_id: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          gerado_por?: string | null
+          id?: string
+          periodo_fim: string
+          periodo_inicio: string
+          resumo_executivo?: string | null
+          storage_path?: string | null
+          tenant_id: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          gerado_por?: string | null
+          id?: string
+          periodo_fim?: string
+          periodo_inicio?: string
+          resumo_executivo?: string | null
+          storage_path?: string | null
+          tenant_id?: string
+          titulo?: string
+        }
+        Relationships: []
       }
       repasses_estaduais: {
         Row: {
