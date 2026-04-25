@@ -47,6 +47,8 @@ export const Route = createFileRoute("/parceiro")({
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : "";
+    const [showStack, setShowStack] = useState(false);
     
     const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/) || errorMsg.match(/line (\d+)/);
     const lineInfo = lineMatch ? `Linha: ${lineMatch[1]}` : "Localização não identificada";
@@ -70,6 +72,13 @@ export const Route = createFileRoute("/parceiro")({
 
     const guidance = getGuidance(errorMsg);
 
+    const copyError = () => {
+      const fullText = `Erro: ${errorMsg}\n\nStack Trace:\n${errorStack}`;
+      navigator.clipboard.writeText(fullText).then(() => {
+        toast.success("Erro copiado para a área de transferência!");
+      });
+    };
+
     useEffect(() => {
       console.error("Erro diagnóstico /parceiro:", error);
     }, [error]);
@@ -77,9 +86,15 @@ export const Route = createFileRoute("/parceiro")({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 text-center dark:bg-slate-950">
         <div className="w-full max-w-2xl overflow-hidden rounded-xl border bg-white shadow-2xl dark:bg-slate-900 text-left">
-          <div className="flex items-center gap-2 border-b bg-destructive/10 px-6 py-4 text-destructive font-bold">
-            <AlertCircle className="h-5 w-5" />
-            <span>Erro Detectado</span>
+          <div className="flex items-center justify-between border-b bg-destructive/10 px-6 py-4 text-destructive font-bold">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <span>Erro Detectado</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={copyError} className="h-8 px-2 text-destructive hover:bg-destructive/20">
+              <Copy className="mr-2 h-3.5 w-3.5" />
+              Copiar Erro
+            </Button>
           </div>
           
           <div className="p-6">
@@ -103,6 +118,23 @@ export const Route = createFileRoute("/parceiro")({
               <pre className="overflow-x-auto whitespace-pre-wrap py-2">
                 {errorMsg}
               </pre>
+              
+              {errorStack && (
+                <div className="mt-2 border-t border-slate-800 pt-2">
+                  <button 
+                    onClick={() => setShowStack(!showStack)}
+                    className="flex w-full items-center justify-between text-slate-500 hover:text-slate-300"
+                  >
+                    <span>Stack Trace</span>
+                    {showStack ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                  {showStack && (
+                    <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre text-[10px] text-slate-400">
+                      {errorStack}
+                    </pre>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-3 border-t pt-4">
