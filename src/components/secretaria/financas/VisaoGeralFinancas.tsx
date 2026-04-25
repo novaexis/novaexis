@@ -27,7 +27,7 @@ export function VisaoGeralFinancas({ kpis }: VisaoGeralFinancasProps) {
       const { data, error } = await supabase
         .from("repasses_municipais")
         .select("*")
-        .order("data_recebimento", { ascending: false })
+        .order("data_credito", { ascending: false })
         .limit(5);
       
       if (error) throw error;
@@ -127,7 +127,7 @@ export function VisaoGeralFinancas({ kpis }: VisaoGeralFinancasProps) {
                       <p className="font-medium text-sm">{rp.fonte}</p>
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="mr-1 h-3 w-3" />
-                        {new Date(rp.data_recebimento || "").toLocaleDateString()}
+                        {new Date(rp.data_credito || "").toLocaleDateString()}
                       </div>
                     </div>
                   </div>
