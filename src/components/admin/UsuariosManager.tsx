@@ -695,5 +695,4 @@ function ResetSenhaDialog({
   );
 }
 
-// `Plus` re-export silenciador (caso plugin remova import não usado)
-void Plus;
+}
