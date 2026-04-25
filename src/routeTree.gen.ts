@@ -17,7 +17,9 @@ import { Route as CidadaoRouteImport } from './routes/cidadao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrefeitoIndexRouteImport } from './routes/prefeito.index'
+import { Route as PrefeitoSocialRouteImport } from './routes/prefeito.social'
 import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
+import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
@@ -69,9 +71,19 @@ const PrefeitoIndexRoute = PrefeitoIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PrefeitoRoute,
 } as any)
+const PrefeitoSocialRoute = PrefeitoSocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
 const PrefeitoCaptacaoRoute = PrefeitoCaptacaoRouteImport.update({
   id: '/captacao',
   path: '/captacao',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
+const PrefeitoBenchmarkRoute = PrefeitoBenchmarkRouteImport.update({
+  id: '/benchmark',
+  path: '/benchmark',
   getParentRoute: () => PrefeitoRoute,
 } as any)
 const CidadaoServicosRoute = CidadaoServicosRouteImport.update({
@@ -141,7 +153,9 @@ export interface FileRoutesByFullPath {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -161,7 +175,9 @@ export interface FileRoutesByTo {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -183,7 +199,9 @@ export interface FileRoutesById {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -206,7 +224,9 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/social'
     | '/prefeito/'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
@@ -226,7 +246,9 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/social'
     | '/prefeito'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
@@ -247,7 +269,9 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/social'
     | '/prefeito/'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
@@ -325,11 +349,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrefeitoIndexRouteImport
       parentRoute: typeof PrefeitoRoute
     }
+    '/prefeito/social': {
+      id: '/prefeito/social'
+      path: '/social'
+      fullPath: '/prefeito/social'
+      preLoaderRoute: typeof PrefeitoSocialRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
     '/prefeito/captacao': {
       id: '/prefeito/captacao'
       path: '/captacao'
       fullPath: '/prefeito/captacao'
       preLoaderRoute: typeof PrefeitoCaptacaoRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
+    '/prefeito/benchmark': {
+      id: '/prefeito/benchmark'
+      path: '/benchmark'
+      fullPath: '/prefeito/benchmark'
+      preLoaderRoute: typeof PrefeitoBenchmarkRouteImport
       parentRoute: typeof PrefeitoRoute
     }
     '/cidadao/servicos': {
@@ -475,12 +513,16 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
 )
 
 interface PrefeitoRouteChildren {
+  PrefeitoBenchmarkRoute: typeof PrefeitoBenchmarkRoute
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
+  PrefeitoSocialRoute: typeof PrefeitoSocialRoute
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
 }
 
 const PrefeitoRouteChildren: PrefeitoRouteChildren = {
+  PrefeitoBenchmarkRoute: PrefeitoBenchmarkRoute,
   PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
+  PrefeitoSocialRoute: PrefeitoSocialRoute,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
 }
 
