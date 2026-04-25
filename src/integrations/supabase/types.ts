@@ -202,6 +202,51 @@ export type Database = {
           },
         ]
       }
+      atendimentos_cras: {
+        Row: {
+          created_at: string
+          data_atendimento: string
+          id: string
+          quantidade: number
+          tenant_id: string
+          tipo_servico: string | null
+          unidade: string
+        }
+        Insert: {
+          created_at?: string
+          data_atendimento: string
+          id?: string
+          quantidade?: number
+          tenant_id: string
+          tipo_servico?: string | null
+          unidade: string
+        }
+        Update: {
+          created_at?: string
+          data_atendimento?: string
+          id?: string
+          quantidade?: number
+          tenant_id?: string
+          tipo_servico?: string | null
+          unidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atendimentos_cras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atendimentos_cras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -380,6 +425,185 @@ export type Database = {
         }
         Relationships: []
       }
+      campanhas_vacinacao: {
+        Row: {
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          doses_aplicadas: number | null
+          id: string
+          meta_doses: number | null
+          nome: string
+          publico_alvo: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          doses_aplicadas?: number | null
+          id?: string
+          meta_doses?: number | null
+          nome: string
+          publico_alvo?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          doses_aplicadas?: number | null
+          id?: string
+          meta_doses?: number | null
+          nome?: string
+          publico_alvo?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanhas_vacinacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campanhas_vacinacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos_obras: {
+        Row: {
+          bairro: string | null
+          contratada: string | null
+          created_at: string
+          data_fim_prevista: string | null
+          data_inicio: string | null
+          descricao: string
+          id: string
+          localizacao: string | null
+          numero: string
+          status: string
+          tenant_id: string
+          valor_executado: number | null
+          valor_total: number | null
+        }
+        Insert: {
+          bairro?: string | null
+          contratada?: string | null
+          created_at?: string
+          data_fim_prevista?: string | null
+          data_inicio?: string | null
+          descricao: string
+          id?: string
+          localizacao?: string | null
+          numero: string
+          status?: string
+          tenant_id: string
+          valor_executado?: number | null
+          valor_total?: number | null
+        }
+        Update: {
+          bairro?: string | null
+          contratada?: string | null
+          created_at?: string
+          data_fim_prevista?: string | null
+          data_inicio?: string | null
+          descricao?: string
+          id?: string
+          localizacao?: string | null
+          numero?: string
+          status?: string
+          tenant_id?: string
+          valor_executado?: number | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_obras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_obras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demanda_historico: {
+        Row: {
+          created_at: string
+          demanda_id: string
+          id: string
+          observacao: string | null
+          status_anterior: string | null
+          status_novo: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          demanda_id: string
+          id?: string
+          observacao?: string | null
+          status_anterior?: string | null
+          status_novo: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          demanda_id?: string
+          id?: string
+          observacao?: string | null
+          status_anterior?: string | null
+          status_novo?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_historico_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_historico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_historico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_historico_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandas: {
         Row: {
           anexos: string[] | null
@@ -496,6 +720,72 @@ export type Database = {
           },
           {
             foreignKeyName: "escolas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      familias_acompanhamento: {
+        Row: {
+          bairro: string | null
+          beneficios_ativos: string[] | null
+          cadunico_nis: string | null
+          cpf_responsavel: string | null
+          created_at: string
+          data_ultimo_atendimento: string | null
+          id: string
+          membros: number | null
+          nome_responsavel: string
+          observacoes: string | null
+          perfil_risco: string
+          renda_per_capita: number | null
+          tecnico_responsavel: string | null
+          tenant_id: string
+        }
+        Insert: {
+          bairro?: string | null
+          beneficios_ativos?: string[] | null
+          cadunico_nis?: string | null
+          cpf_responsavel?: string | null
+          created_at?: string
+          data_ultimo_atendimento?: string | null
+          id?: string
+          membros?: number | null
+          nome_responsavel: string
+          observacoes?: string | null
+          perfil_risco?: string
+          renda_per_capita?: number | null
+          tecnico_responsavel?: string | null
+          tenant_id: string
+        }
+        Update: {
+          bairro?: string | null
+          beneficios_ativos?: string[] | null
+          cadunico_nis?: string | null
+          cpf_responsavel?: string | null
+          created_at?: string
+          data_ultimo_atendimento?: string | null
+          id?: string
+          membros?: number | null
+          nome_responsavel?: string
+          observacoes?: string | null
+          perfil_risco?: string
+          renda_per_capita?: number | null
+          tecnico_responsavel?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familias_acompanhamento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "familias_acompanhamento_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
@@ -716,6 +1006,60 @@ export type Database = {
           },
         ]
       }
+      ocorrencias_seguranca: {
+        Row: {
+          bairro: string | null
+          created_at: string
+          data_hora: string | null
+          descricao: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          status: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          bairro?: string | null
+          created_at?: string
+          data_hora?: string | null
+          descricao?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          status?: string
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          bairro?: string | null
+          created_at?: string
+          data_hora?: string | null
+          descricao?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ocorrencias_seguranca_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ocorrencias_seguranca_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_limits: {
         Row: {
           chave: string
@@ -913,6 +1257,54 @@ export type Database = {
           },
           {
             foreignKeyName: "repasses_estaduais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repasses_municipais: {
+        Row: {
+          competencia: string
+          created_at: string
+          data_credito: string | null
+          fonte: string
+          id: string
+          status: string
+          tenant_id: string
+          valor: number
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          data_credito?: string | null
+          fonte: string
+          id?: string
+          status?: string
+          tenant_id: string
+          valor: number
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          data_credito?: string | null
+          fonte?: string
+          id?: string
+          status?: string
+          tenant_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repasses_municipais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repasses_municipais_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
