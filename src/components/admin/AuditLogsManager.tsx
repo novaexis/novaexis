@@ -104,14 +104,18 @@ function LogsTable() {
         return;
       }
 
+      // Converte as datas locais para ISO strings no início/fim do dia para garantir timezone UTC no servidor
+      const isoDateFrom = dateFrom ? new Date(`${dateFrom}T00:00:00`).toISOString() : undefined;
+      const isoDateTo = dateTo ? new Date(`${dateTo}T23:59:59.999`).toISOString() : undefined;
+
       const { data, error } = await supabase.functions.invoke("get-audit-logs-admin", {
         body: {
           page,
           perPage,
           action: actionFilter === "all" ? undefined : actionFilter,
           severity: severityFilter === "all" ? undefined : severityFilter,
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
+          dateFrom: isoDateFrom,
+          dateTo: isoDateTo,
         },
       });
       
