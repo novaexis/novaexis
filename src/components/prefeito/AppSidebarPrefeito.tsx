@@ -7,6 +7,7 @@ import {
   BarChart3,
   Brain,
   Radio,
+  FileText,
   Plug,
   Settings,
   LogOut,
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
   { to: "/prefeito/benchmark", label: "Benchmark", icon: BarChart3 },
   { to: "/prefeito/ia", label: "IA Estratégica", icon: Brain, disabled: true },
   { to: "/prefeito/social", label: "Social Intelligence", icon: Radio },
+  { to: "/prefeito/relatorios", label: "Relatórios", icon: FileText },
   { to: "/prefeito/integracoes", label: "Integrações", icon: Plug, disabled: true },
 ];
 

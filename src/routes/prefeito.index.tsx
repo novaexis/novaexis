@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { KPICard } from "@/components/KPICard";
 import { HistoricoKPIs } from "@/components/prefeito/HistoricoKPIs";
+import { BriefingSemanalCard } from "@/components/prefeito/BriefingSemanalCard";
 import { Card } from "@/components/ui/card";
 import {
   Heart,
@@ -229,6 +230,13 @@ function PrefeitoDashboard() {
       {tenantId && (
         <section className="mb-8">
           <HistoricoKPIs tenantId={tenantId} secretarias={SECRETARIAS} />
+        </section>
+      )}
+
+      {/* Briefing semanal IA */}
+      {tenantId && (
+        <section className="mb-8">
+          <BriefingSemanalCard tenantId={tenantId} />
         </section>
       )}
 
