@@ -131,8 +131,8 @@ function SecretariaContent({ slug }: { slug: string }) {
         <TabRelatorios slug={slug} nomeSecretaria={meta.nome} canEdit={canEdit} />
       }
       integracoes={
-        secretaria?.tenant_id ? (
-          <TabIntegracoes tenantId={secretaria.tenant_id} secretariaSlug={slug} />
+        tenantId ? (
+          <TabIntegracoes tenantId={tenantId} secretariaSlug={slug} />
         ) : undefined
       }
     />
