@@ -12,6 +12,7 @@ import { TabDemandas } from "@/components/secretaria/TabDemandas";
 import { TabIndicadores } from "@/components/secretaria/TabIndicadores";
 import { TabRelatorios } from "@/components/secretaria/TabRelatorios";
 import { TabIntegracoes } from "@/components/secretaria/TabIntegracoes";
+import { TabAssessoriaIA } from "@/components/secretaria/TabAssessoriaIA";
 import { VisaoGeralPlaceholder } from "@/components/secretaria/VisaoGeralPlaceholder";
 import { VisaoGeralSaude } from "@/components/secretaria/saude/VisaoGeralSaude";
 import { VisaoGeralEducacao } from "@/components/secretaria/educacao/VisaoGeralEducacao";
