@@ -25,10 +25,11 @@ Deno.test("RLS: Cross-tenant isolation test", async (t) => {
   const tenantB_ID = crypto.randomUUID();
   
   await t.step("Setup test tenants", async () => {
-    await adminClient.from('tenants').insert([
-      { id: tenantA_ID, nome: 'Tenant A', slug: 'tenant-a' },
-      { id: tenantB_ID, nome: 'Tenant B', slug: 'tenant-b' }
+    const { error: tErr } = await adminClient.from('tenants').insert([
+      { id: tenantA_ID, nome: 'Tenant A', slug: `tenant-a-${Date.now()}` },
+      { id: tenantB_ID, nome: 'Tenant B', slug: `tenant-b-${Date.now()}` }
     ]);
+    if (tErr) throw tErr;
   });
 
   // 2. Setup two users, one for each tenant
@@ -40,35 +41,44 @@ Deno.test("RLS: Cross-tenant isolation test", async (t) => {
   let userB_ID: string;
 
   await t.step("Setup test users", async () => {
-    const { data: authA } = await adminClient.auth.admin.createUser({
+    const { data: authA, error: aErr } = await adminClient.auth.admin.createUser({
       email: userA_Email,
       password,
       email_confirm: true
     });
-    const { data: authB } = await adminClient.auth.admin.createUser({
+    if (aErr) throw aErr;
+
+    const { data: authB, error: bErr } = await adminClient.auth.admin.createUser({
       email: userB_Email,
       password,
       email_confirm: true
     });
+    if (bErr) throw bErr;
 
     userA_ID = authA.user!.id;
     userB_ID = authB.user!.id;
 
     // Assign tenants via profile and roles
-    await adminClient.from('profiles').update({ tenant_id: tenantA_ID }).eq('id', userA_ID);
-    await adminClient.from('profiles').update({ tenant_id: tenantB_ID }).eq('id', userB_ID);
+    // Profiles are created automatically by handle_new_user trigger
+    const { error: pAErr } = await adminClient.from('profiles').update({ tenant_id: tenantA_ID }).eq('id', userA_ID);
+    if (pAErr) throw pAErr;
     
-    await adminClient.from('user_roles').insert([
+    const { error: pBErr } = await adminClient.from('profiles').update({ tenant_id: tenantB_ID }).eq('id', userB_ID);
+    if (pBErr) throw pBErr;
+    
+    const { error: rErr } = await adminClient.from('user_roles').insert([
       { user_id: userA_ID, role: 'cidadao', tenant_id: tenantA_ID },
       { user_id: userB_ID, role: 'cidadao', tenant_id: tenantB_ID }
     ]);
+    if (rErr) throw rErr;
   });
 
-  // 3. Test Isolation on 'demandas' table (example of RLS-enabled table)
+  // 3. Test Isolation on 'demandas' table
   await t.step("Test tenant isolation on 'demandas' table", async () => {
     // Authenticate as User A
-    const clientA = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
-    await clientA.auth.signInWithPassword({ email: userA_Email, password });
+    const clientA = createClient(supabaseUrl, anonKey);
+    const { error: loginAErr } = await clientA.auth.signInWithPassword({ email: userA_Email, password });
+    if (loginAErr) throw loginAErr;
 
     // User A creates a demanda
     const { data: demandaA, error: errA } = await clientA
@@ -84,13 +94,15 @@ Deno.test("RLS: Cross-tenant isolation test", async (t) => {
       .select()
       .single();
     
-    assertEquals(errA, null, "User A should be able to create demanda in own tenant");
+    assertEquals(errA, null, `User A should be able to create demanda in own tenant. Error: ${errA?.message}`);
+    assertExists(demandaA, "Demanda A should have been created");
 
     // Authenticate as User B
-    const clientB = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
-    await clientB.auth.signInWithPassword({ email: userB_Email, password });
+    const clientB = createClient(supabaseUrl, anonKey);
+    const { error: loginBErr } = await clientB.auth.signInWithPassword({ email: userB_Email, password });
+    if (loginBErr) throw loginBErr;
 
-    // User B tries to read Demanda A (should return nothing or error depending on policy)
+    // User B tries to read Demanda A
     const { data: readAByB } = await clientB
       .from('demandas')
       .select('*')
@@ -110,13 +122,13 @@ Deno.test("RLS: Cross-tenant isolation test", async (t) => {
         protocolo: `Sneak-${Date.now()}`
       });
     
-    assertNotEquals(crossInsertErr, null, "User B should NOT be able to insert into Tenant A");
+    assertNotEquals(crossInsertErr, null, "User B should NOT be able to insert into Tenant A due to RLS");
   });
 
   // Cleanup
   await t.step("Cleanup", async () => {
-    await adminClient.auth.admin.deleteUser(userA_ID);
-    await adminClient.auth.admin.deleteUser(userB_ID);
+    if (userA_ID) await adminClient.auth.admin.deleteUser(userA_ID);
+    if (userB_ID) await adminClient.auth.admin.deleteUser(userB_ID);
     await adminClient.from('tenants').delete().in('id', [tenantA_ID, tenantB_ID]);
   });
 });
