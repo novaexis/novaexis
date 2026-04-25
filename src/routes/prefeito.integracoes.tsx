@@ -92,7 +92,7 @@ function IntegracoesPage() {
       ) : (
         <div className="space-y-6">
           {grupos.map(([slug, lista]) => {
-            const meta = SECRETARIAS_MUNICIPAIS.find((s) => s.slug === slug);
+            const meta = SECRETARIAS_MUNICIPAIS[slug];
             return (
               <section key={slug}>
                 <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
