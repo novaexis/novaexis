@@ -142,7 +142,7 @@ export function TabDemandas({ demandas, canEdit, onChanged }: TabDemandasProps) 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard titulo="Abertas" valor={metricas.abertas} status="info" />
+        <KPICard titulo="Abertas" valor={metricas.abertas} status="ok" />
         <KPICard
           titulo="Vencidas SLA"
           valor={metricas.vencidas}
