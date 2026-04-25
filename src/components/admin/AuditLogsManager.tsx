@@ -101,6 +101,13 @@ function LogsTable() {
   async function loadLogs() {
     setLoading(true);
     try {
+      // Validação básica de datas no frontend
+      if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+        toast.error("A data inicial não pode ser maior que a data final");
+        setLoading(false);
+        return;
+      }
+
       let q = supabase
         .from("audit_logs" as any)
         .select(`
@@ -112,16 +119,36 @@ function LogsTable() {
         .order("created_at", { ascending: false })
         .limit(200);
 
-      if (severityFilter !== "all") q = q.eq("severity", severityFilter);
-      if (actionFilter !== "all") q = q.eq("action", actionFilter);
+      if (severityFilter !== "all") {
+        const validSeverities = ["info", "warning", "critical"];
+        if (!validSeverities.includes(severityFilter)) {
+          throw new Error("Nível de severidade inválido selecionado.");
+        }
+        q = q.eq("severity", severityFilter);
+      }
+
+      if (actionFilter !== "all") {
+        if (actionFilter.length < 3) {
+          throw new Error("O filtro de ação selecionado é inválido.");
+        }
+        q = q.eq("action", actionFilter);
+      }
+
       if (dateFrom) q = q.gte("created_at", `${dateFrom}T00:00:00`);
       if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
 
       const { data, error } = await q;
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Erro Supabase:", error);
+        throw new Error(`Erro ao consultar banco de dados: ${error.message}`);
+      }
+      
       setLogs((data ?? []) as unknown as AuditLog[]);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao carregar logs");
+      const msg = e instanceof Error ? e.message : "Falha desconhecida ao carregar logs";
+      toast.error(msg);
+      console.error("AuditLogs Error:", e);
     } finally {
       setLoading(false);
     }
