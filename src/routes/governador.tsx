@@ -1,33 +1,66 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { KPICard } from "@/components/KPICard";
+import { ChatIAGovernador } from "@/components/governador/ChatIAGovernador";
+import { RepasesEstaduais, type RepasseItem } from "@/components/governador/RepasesEstaduais";
+import { Loader2, Heart, GraduationCap, Wallet, ShieldAlert, HardHat, HandHeart } from "lucide-react";
 
 export const Route = createFileRoute("/governador")({
-  head: () => ({ meta: [{ title: "Painel do Governador — NovaeXis" }] }),
+  head: () => ({
+    meta: [
+      { title: "Painel do Governador — NovaeXis" },
+      { name: "description", content: "Visão estratégica do Estado do Pará via secretarias estaduais." },
+    ],
+  }),
   component: () => (
     <RoleGuard
       allowed={["governador", "superadmin"]}
-      title="Painel do Governador do Pará"
-      subtitle="Visão estadual integrada"
+      title="Estado do Pará"
+      subtitle="Painel do Governador"
     >
       <GovernadorDashboard />
     </RoleGuard>
   ),
 });
 
-interface MunicipioRow {
-  id: string;
-  nome: string;
-  populacao: number | null;
-  idhm: number | null;
-  bioma: string | null;
+interface KPIRow {
+  secretaria_slug: string;
+  indicador: string;
+  valor: number;
+  unidade: string | null;
+  variacao_pct: number | null;
+  status: "ok" | "atencao" | "critico";
+  referencia_data: string;
+}
+
+const SECRETARIAS_META: Record<string, { nome: string; icon: typeof Heart; indicadorPrincipal: string }> = {
+  sespa:   { nome: "SESPA — Saúde",          icon: Heart,        indicadorPrincipal: "Cobertura atenção básica" },
+  seduc:   { nome: "SEDUC — Educação",       icon: GraduationCap, indicadorPrincipal: "Taxa matrícula ensino médio" },
+  sefa:    { nome: "SEFA — Fazenda",         icon: Wallet,       indicadorPrincipal: "Execução orçamentária global" },
+  segup:   { nome: "SEGUP — Segurança",      icon: ShieldAlert,  indicadorPrincipal: "Taxa de homicídios por 100k hab" },
+  seinfra: { nome: "SEINFRA — Infraestrutura", icon: HardHat,    indicadorPrincipal: "Execução média de obras" },
+  semas:   { nome: "SEMAS — Assist. Social", icon: HandHeart,    indicadorPrincipal: "Famílias no CadÚnico" },
+};
+
+function formatValor(valor: number, unidade: string | null): string {
+  if (unidade === "R$") {
+    if (valor >= 1_000_000_000) return `${(valor / 1_000_000_000).toFixed(2)} bi`;
+    if (valor >= 1_000_000) return `${(valor / 1_000_000).toFixed(0)} mi`;
+    return valor.toLocaleString("pt-BR");
+  }
+  if (unidade === "famílias" || unidade === "pessoas" || unidade === "leitos" || unidade === "ocorrências") {
+    return valor.toLocaleString("pt-BR");
+  }
+  if (Number.isInteger(valor)) return valor.toString();
+  return valor.toFixed(1);
 }
 
 function GovernadorDashboard() {
-  const [municipios, setMunicipios] = useState<MunicipioRow[]>([]);
+  const navigate = useNavigate();
+  const [kpis, setKpis] = useState<KPIRow[]>([]);
+  const [repasses, setRepasses] = useState<RepasseItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,65 +68,96 @@ function GovernadorDashboard() {
   }, []);
 
   async function load() {
-    const { data } = await supabase
+    setLoading(true);
+    const { data: tenants } = await supabase
       .from("tenants")
-      .select("id, nome, populacao, idhm, bioma")
-      .eq("tipo", "municipio")
-      .eq("ativo", true)
-      .order("populacao", { ascending: false });
-    setMunicipios((data ?? []) as MunicipioRow[]);
+      .select("id")
+      .eq("tipo", "estado")
+      .limit(1);
+    const tenantId = tenants?.[0]?.id;
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+
+    const [{ data: kpisData }, { data: repassesData }] = await Promise.all([
+      supabase
+        .from("kpis")
+        .select("secretaria_slug, indicador, valor, unidade, variacao_pct, status, referencia_data")
+        .eq("tenant_id", tenantId)
+        .eq("fonte", "seed")
+        .order("referencia_data", { ascending: false }),
+      supabase
+        .from("repasses_estaduais")
+        .select("id, fonte, descricao, valor, prazo, status, requisito_pendente, progresso_pct")
+        .eq("tenant_id", tenantId)
+        .order("prazo", { ascending: true }),
+    ]);
+
+    setKpis((kpisData ?? []) as KPIRow[]);
+    setRepasses((repassesData ?? []) as RepasseItem[]);
     setLoading(false);
   }
 
+  const kpisPrincipais = useMemo(() => {
+    return Object.entries(SECRETARIAS_META).map(([slug, meta]) => {
+      const kpi = kpis.find((k) => k.secretaria_slug === slug && k.indicador === meta.indicadorPrincipal);
+      return { slug, meta, kpi };
+    });
+  }, [kpis]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Estado do Pará</h1>
-        <p className="text-sm text-muted-foreground">
-          {municipios.length} município(s) aderente(s) à plataforma
+        <h1 className="text-2xl font-bold tracking-tight">Visão Estratégica do Estado</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          6 secretarias estaduais — clique em um cartão para ver o detalhamento
         </p>
       </div>
 
-      <Card className="p-5">
-        <h2 className="mb-4 text-base font-semibold">Municípios aderentes</h2>
-        {loading ? (
-          <div className="flex h-32 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-3 py-2">Município</th>
-                  <th className="px-3 py-2 text-right">População</th>
-                  <th className="px-3 py-2 text-right">IDHM</th>
-                  <th className="px-3 py-2">Bioma</th>
-                </tr>
-              </thead>
-              <tbody>
-                {municipios.map((m) => (
-                  <tr key={m.id} className="border-b last:border-0">
-                    <td className="px-3 py-2.5 font-medium">{m.nome}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">
-                      {m.populacao?.toLocaleString("pt-BR") ?? "—"}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">
-                      {m.idhm?.toFixed(3) ?? "—"}
-                    </td>
-                    <td className="px-3 py-2.5 capitalize">{m.bioma ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* Linha 1: KPIs das secretarias */}
+      <section className="mb-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {kpisPrincipais.map(({ slug, meta, kpi }) => {
+            const Icon = meta.icon;
+            return (
+              <KPICard
+                key={slug}
+                titulo={meta.nome}
+                valor={kpi ? formatValor(kpi.valor, kpi.unidade) : "—"}
+                unidade={kpi?.unidade ?? undefined}
+                variacaoPct={kpi?.variacao_pct ?? null}
+                status={kpi?.status ?? "ok"}
+                icon={<Icon className="h-5 w-5" />}
+                onClick={() =>
+                  navigate({
+                    to: "/governador/secretaria/$slug",
+                    params: { slug },
+                  })
+                }
+              />
+            );
+          })}
+        </div>
+      </section>
 
-      <div className="mt-6 rounded-lg border bg-card p-4 text-xs text-muted-foreground">
-        Bloco 7 trará o mapa interativo do Pará com 144 municípios coloridos por
-        indicador, ranking, drill-down por município e gestão de repasses estaduais.
-      </div>
+      {/* Linha 2: Chat IA + Repasses */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <ChatIAGovernador />
+        </div>
+        <div className="lg:col-span-2">
+          <RepasesEstaduais repasses={repasses} />
+        </div>
+      </section>
     </div>
   );
 }

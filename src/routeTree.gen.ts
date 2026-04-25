@@ -16,6 +16,7 @@ import { Route as GovernadorRouteImport } from './routes/governador'
 import { Route as CidadaoRouteImport } from './routes/cidadao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GovernadorSecretariaSlugRouteImport } from './routes/governador.secretaria.$slug'
 
 const SecretariaRoute = SecretariaRouteImport.update({
   id: '/secretaria',
@@ -52,34 +53,43 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GovernadorSecretariaSlugRoute =
+  GovernadorSecretariaSlugRouteImport.update({
+    id: '/secretaria/$slug',
+    path: '/secretaria/$slug',
+    getParentRoute: () => GovernadorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRoute
-  '/governador': typeof GovernadorRoute
+  '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
+  '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRoute
-  '/governador': typeof GovernadorRoute
+  '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
+  '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRoute
-  '/governador': typeof GovernadorRoute
+  '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
+  '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +101,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/prefeito'
     | '/secretaria'
+    | '/governador/secretaria/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/prefeito'
     | '/secretaria'
+    | '/governador/secretaria/$slug'
   id:
     | '__root__'
     | '/'
@@ -109,13 +121,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/prefeito'
     | '/secretaria'
+    | '/governador/secretaria/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CidadaoRoute: typeof CidadaoRoute
-  GovernadorRoute: typeof GovernadorRoute
+  GovernadorRoute: typeof GovernadorRouteWithChildren
   LoginRoute: typeof LoginRoute
   PrefeitoRoute: typeof PrefeitoRoute
   SecretariaRoute: typeof SecretariaRoute
@@ -172,14 +185,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/governador/secretaria/$slug': {
+      id: '/governador/secretaria/$slug'
+      path: '/secretaria/$slug'
+      fullPath: '/governador/secretaria/$slug'
+      preLoaderRoute: typeof GovernadorSecretariaSlugRouteImport
+      parentRoute: typeof GovernadorRoute
+    }
   }
 }
+
+interface GovernadorRouteChildren {
+  GovernadorSecretariaSlugRoute: typeof GovernadorSecretariaSlugRoute
+}
+
+const GovernadorRouteChildren: GovernadorRouteChildren = {
+  GovernadorSecretariaSlugRoute: GovernadorSecretariaSlugRoute,
+}
+
+const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
+  GovernadorRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CidadaoRoute: CidadaoRoute,
-  GovernadorRoute: GovernadorRoute,
+  GovernadorRoute: GovernadorRouteWithChildren,
   LoginRoute: LoginRoute,
   PrefeitoRoute: PrefeitoRoute,
   SecretariaRoute: SecretariaRoute,
@@ -187,3 +219,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
