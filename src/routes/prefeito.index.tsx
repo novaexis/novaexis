@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { KPICard } from "@/components/KPICard";
 import { HistoricoKPIs } from "@/components/prefeito/HistoricoKPIs";
 import { BriefingSemanalCard } from "@/components/prefeito/BriefingSemanalCard";
+import { ChatIACompacto } from "@/components/prefeito/ChatIACompacto";
 import { Card } from "@/components/ui/card";
 import {
   Heart,
@@ -233,10 +234,11 @@ function PrefeitoDashboard() {
         </section>
       )}
 
-      {/* Briefing semanal IA */}
+      {/* IA Estratégica & Briefing */}
       {tenantId && (
-        <section className="mb-8">
+        <section className="mb-8 grid gap-6 lg:grid-cols-2">
           <BriefingSemanalCard tenantId={tenantId} />
+          <ChatIACompacto />
         </section>
       )}
 
