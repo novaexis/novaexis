@@ -57,6 +57,9 @@ function AdminPanel() {
           <TabsTrigger value="auditoria" className="gap-2">
             <Activity className="h-4 w-4" /> Auditoria
           </TabsTrigger>
+          <TabsTrigger value="config" className="gap-2">
+            <Sliders className="h-4 w-4" /> Configurações
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
@@ -81,6 +84,10 @@ function AdminPanel() {
 
         <TabsContent value="auditoria" className="mt-5">
           <AuditLogsManager />
+        </TabsContent>
+
+        <TabsContent value="config" className="mt-5">
+          <ConfigGlobaisManager />
         </TabsContent>
       </Tabs>
     </div>
