@@ -45,6 +45,9 @@ function AdminPanel() {
           <TabsTrigger value="usuarios" className="gap-2">
             <Users className="h-4 w-4" /> Usuários
           </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2">
+            <CreditCard className="h-4 w-4" /> Billing
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
@@ -57,6 +60,10 @@ function AdminPanel() {
 
         <TabsContent value="usuarios" className="mt-5">
           <UsuariosManager />
+        </TabsContent>
+
+        <TabsContent value="billing" className="mt-5">
+          <BillingManager />
         </TabsContent>
       </Tabs>
     </div>
