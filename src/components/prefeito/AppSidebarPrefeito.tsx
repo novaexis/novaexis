@@ -50,7 +50,7 @@ const NAV: NavItem[] = [
   { to: "/prefeito/ia", label: "IA Estratégica", icon: Brain, disabled: true },
   { to: "/prefeito/social", label: "Social Intelligence", icon: Radio },
   { to: "/prefeito/relatorios", label: "Relatórios", icon: FileText },
-  { to: "/prefeito/integracoes", label: "Integrações", icon: Plug, disabled: true },
+  { to: "/prefeito/integracoes", label: "Integrações", icon: Plug },
 ];
 
 interface Props {
