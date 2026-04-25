@@ -101,10 +101,6 @@ function ParceiroPage() {
     setAtualizandoId(null);
   }
 
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: novoStatus } : l));
-    toast.success("Status atualizado!");
-  }
-
   async function indicar() {
     if (!novo.nome || !novo.email) {
       toast.error("Nome e email são obrigatórios");
