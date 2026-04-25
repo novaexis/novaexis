@@ -99,7 +99,13 @@ function SecretariaContent({ slug }: { slug: string }) {
       loading={loading}
       error={error}
       onRetry={reload}
-      visaoGeral={<VisaoGeralPlaceholder kpis={kpis} nome={meta.nome} />}
+      visaoGeral={
+        slug === "saude" ? (
+          <VisaoGeralSaude kpis={kpis} />
+        ) : (
+          <VisaoGeralPlaceholder kpis={kpis} nome={meta.nome} />
+        )
+      }
       demandas={
         <TabDemandas demandas={demandas} canEdit={canEdit} onChanged={reload} />
       }
