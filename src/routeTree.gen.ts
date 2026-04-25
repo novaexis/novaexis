@@ -25,6 +25,7 @@ import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
 import { Route as CidadaoEducacaoRouteImport } from './routes/cidadao.educacao'
+import { Route as PrefeitoSecretariaSlugRouteImport } from './routes/prefeito.secretaria.$slug'
 import { Route as GovernadorSecretariaSlugRouteImport } from './routes/governador.secretaria.$slug'
 import { Route as CidadaoServicosSolicitarRouteImport } from './routes/cidadao.servicos.solicitar'
 import { Route as CidadaoServicosOuvidoriaRouteImport } from './routes/cidadao.servicos.ouvidoria'
@@ -112,6 +113,11 @@ const CidadaoEducacaoRoute = CidadaoEducacaoRouteImport.update({
   path: '/educacao',
   getParentRoute: () => CidadaoRoute,
 } as any)
+const PrefeitoSecretariaSlugRoute = PrefeitoSecretariaSlugRouteImport.update({
+  id: '/secretaria/$slug',
+  path: '/secretaria/$slug',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
 const GovernadorSecretariaSlugRoute =
   GovernadorSecretariaSlugRouteImport.update({
     id: '/secretaria/$slug',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
+  '/prefeito/secretaria/$slug': typeof PrefeitoSecretariaSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
+  '/prefeito/secretaria/$slug': typeof PrefeitoSecretariaSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
+  '/prefeito/secretaria/$slug': typeof PrefeitoSecretariaSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/ouvidoria'
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
+    | '/prefeito/secretaria/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/ouvidoria'
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
+    | '/prefeito/secretaria/$slug'
   id:
     | '__root__'
     | '/'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/ouvidoria'
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
+    | '/prefeito/secretaria/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -417,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CidadaoEducacaoRouteImport
       parentRoute: typeof CidadaoRoute
     }
+    '/prefeito/secretaria/$slug': {
+      id: '/prefeito/secretaria/$slug'
+      path: '/secretaria/$slug'
+      fullPath: '/prefeito/secretaria/$slug'
+      preLoaderRoute: typeof PrefeitoSecretariaSlugRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
     '/governador/secretaria/$slug': {
       id: '/governador/secretaria/$slug'
       path: '/secretaria/$slug'
@@ -537,6 +556,7 @@ interface PrefeitoRouteChildren {
   PrefeitoRelatoriosRoute: typeof PrefeitoRelatoriosRoute
   PrefeitoSocialRoute: typeof PrefeitoSocialRoute
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
+  PrefeitoSecretariaSlugRoute: typeof PrefeitoSecretariaSlugRoute
 }
 
 const PrefeitoRouteChildren: PrefeitoRouteChildren = {
@@ -545,6 +565,7 @@ const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoRelatoriosRoute: PrefeitoRelatoriosRoute,
   PrefeitoSocialRoute: PrefeitoSocialRoute,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
+  PrefeitoSecretariaSlugRoute: PrefeitoSecretariaSlugRoute,
 }
 
 const PrefeitoRouteWithChildren = PrefeitoRoute._addFileChildren(
