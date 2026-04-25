@@ -69,6 +69,10 @@ function AdminPanel() {
         <TabsContent value="billing" className="mt-5">
           <BillingManager />
         </TabsContent>
+
+        <TabsContent value="auditoria" className="mt-5">
+          <AuditLogsManager />
+        </TabsContent>
       </Tabs>
     </div>
   );
