@@ -102,7 +102,7 @@ function LogsTable() {
     setLoading(true);
     try {
       let q = supabase
-        .from("audit_logs")
+        .from("audit_logs" as any)
         .select(`
           *,
           profiles:actor_id (
