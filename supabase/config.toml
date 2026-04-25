@@ -20,3 +20,15 @@ verify_jwt = true
 
 [functions.processar-importacao]
 verify_jwt = true
+
+[functions.agente-prefeito]
+verify_jwt = true
+
+[functions.agente-secretario]
+verify_jwt = true
+
+[functions.monitor-captacao]
+verify_jwt = true
+
+[functions.benchmark-automatico]
+verify_jwt = true
