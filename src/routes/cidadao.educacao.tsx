@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CidadaoBottomNav } from "@/components/cidadao/CidadaoBottomNav";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Loader2, School } from "lucide-react";
+import { Loader2, School, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/cidadao/educacao")({
   head: () => ({
@@ -52,9 +53,16 @@ function EducacaoPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-5 sm:px-6">
       <h1 className="mb-1 text-xl font-bold tracking-tight">Educação</h1>
-      <p className="mb-5 text-sm text-muted-foreground">
+      <p className="mb-4 text-sm text-muted-foreground">
         Solicite matrículas e acompanhe vagas.
       </p>
+
+      <Link to="/cidadao/educacao/matricular">
+        <Button className="mb-6 w-full gap-2" size="lg">
+          <Plus className="h-4 w-4" />
+          Solicitar matrícula
+        </Button>
+      </Link>
 
       <section className="mb-6">
         <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -118,9 +126,6 @@ function EducacaoPage() {
         </ul>
       </section>
 
-      <p className="mt-6 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-        ✨ Próximo ciclo: wizard de matrícula em 4 passos com upload de documentos.
-      </p>
     </div>
   );
 }

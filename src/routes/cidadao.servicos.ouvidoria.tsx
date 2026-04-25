@@ -25,7 +25,6 @@ export const Route = createFileRoute("/cidadao/servicos/ouvidoria")({
 });
 
 type TipoOuv = "reclamacao" | "sugestao" | "elogio";
-type DemandaTipo = "servico" | "reclamacao" | "sugestao" | "seguranca" | "elogio";
 
 interface Secretaria { slug: string; nome: string }
 
