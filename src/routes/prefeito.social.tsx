@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Smile,
@@ -16,6 +17,10 @@ import {
   MapPin,
   Newspaper,
   Hash,
+  Settings,
+  Sparkles,
+  Youtube,
+  Music2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -27,6 +32,9 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
+import { GaugeScore } from "@/components/social/GaugeScore";
+import { AlertaCrise } from "@/components/social/AlertaCrise";
+import { ModalSugestaoResposta } from "@/components/social/ModalSugestaoResposta";
 
 export const Route = createFileRoute("/prefeito/social")({
   head: () => ({
@@ -40,7 +48,9 @@ type Plataforma =
   | "instagram"
   | "twitter"
   | "google_maps"
-  | "noticias";
+  | "noticias"
+  | "youtube"
+  | "tiktok";
 type Sentimento = "positivo" | "negativo" | "neutro";
 
 interface Mencao {
