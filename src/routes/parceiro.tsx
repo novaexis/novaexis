@@ -19,6 +19,20 @@ import {
 import { Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+function LocalizacaoContato({ cargo, municipio }: { cargo: string; municipio?: string | null }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      {cargo}
+      {municipio && (
+        <>
+          <span className="mx-1">·</span>
+          {municipio}
+        </>
+      )}
+    </p>
+  );
+}
+
 export const Route = createFileRoute("/parceiro")({
   head: () => ({
     meta: [
@@ -300,9 +314,7 @@ function ParceiroPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="font-medium">{l.nome}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {l.cargo} {l.municipio ? `· ${l.municipio}` : ""}
-                          </p>
+                          <LocalizacaoContato cargo={l.cargo} municipio={l.municipio} />
                           <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
