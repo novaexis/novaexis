@@ -35,6 +35,7 @@ export function SecretariaShell({
   demandas,
   indicadores,
   relatorios,
+  integracoes,
   acoes,
 }: SecretariaShellProps) {
   const { primaryRole } = useAuth();
