@@ -150,20 +150,41 @@ function RelatoriosPage() {
   }
 
   async function abrirRelatorio(path: string, imprimir = false) {
-    const { data, error } = await supabase.storage
-      .from("relatorios")
-      .createSignedUrl(path, 60 * 5);
-    if (error || !data) {
-      toast.error("Erro ao abrir relatório");
-      return;
-    }
-    if (imprimir) {
-      const w = window.open(data.signedUrl, "_blank");
-      if (w) {
-        w.addEventListener("load", () => setTimeout(() => w.print(), 400));
+    try {
+      // Baixa o arquivo do Storage e renderiza como HTML via Blob URL
+      // (evita que o navegador trate a URL assinada como download/texto)
+      const { data, error } = await supabase.storage.from("relatorios").download(path);
+      if (error || !data) {
+        toast.error("Erro ao abrir relatório");
+        return;
       }
-    } else {
-      window.open(data.signedUrl, "_blank");
+      const text = await data.text();
+      const htmlBlob = new Blob([text], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(htmlBlob);
+
+      const w = window.open(url, "_blank");
+      if (!w) {
+        toast.error("Permita pop-ups para abrir o relatório");
+        URL.revokeObjectURL(url);
+        return;
+      }
+      if (imprimir) {
+        w.addEventListener("load", () => {
+          setTimeout(() => {
+            try {
+              w.focus();
+              w.print();
+            } catch {
+              /* ignore */
+            }
+          }, 500);
+        });
+      }
+      // Libera o blob após algum tempo
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao abrir relatório");
     }
   }
 
