@@ -1,6 +1,8 @@
 # NovaeXis — Sistema Mestre
 
-Plataforma SaaS multi-tenant para gestão pública municipal e estadual, com portais dedicados para Cidadão, Prefeito, Governador, Secretarias e Parceiros Comerciais.
+Plataforma SaaS multi-tenant para gestão pública municipal e estadual do Pará, com portais dedicados para Cidadão, Prefeito, Governador, Secretarias e Parceiros Comerciais.
+
+> 📘 **Especificação completa do produto (SDD):** veja [`SPEC.md`](./SPEC.md) — documento mestre com visão, arquitetura, schema, módulos, regras EARS, integrações e plano por blocos.
 
 ---
 
@@ -16,19 +18,26 @@ Plataforma SaaS multi-tenant para gestão pública municipal e estadual, com por
 8. [Demo Pública](#-demo-pública-read-only)
 9. [Diagnóstico e Estabilidade](#-diagnóstico-e-estabilidade)
 10. [Scripts e Comandos](#-scripts-e-comandos)
+11. [Segurança](#-segurança)
 
 ---
 
 ## 🎯 Visão Geral
 
-NovaeXis conecta todos os atores do ecossistema público:
+NovaeXis conecta todos os atores do ecossistema público em **três camadas hierárquicas**:
 
-- **Cidadão**: agendamentos, ouvidoria, serviços, demandas
-- **Prefeito**: dashboard executivo, captação de recursos, IA, relatórios, social listening
-- **Governador**: visão estadual, comunicados, repasses, benchmark de municípios
-- **Secretarias**: módulos por área (Saúde, Educação, Finanças, Infraestrutura, Segurança, Assistência)
-- **Parceiros**: portal comercial com indicações, comissões e CRM
-- **Admin**: gestão global de tenants, usuários, billing, auditoria
+1. **União** — Integração com Gov.br (auth, benefícios, dados nacionais)
+2. **Estadual** (NovaeXis Estadual) — Cérebro integrador do Pará, vendável ao Governo
+3. **Municipal** (NovaeXis Municipal) — Painel do prefeito, secretários e app do cidadão
+
+### Perfis atendidos
+
+- **Cidadão** — agendamentos, ouvidoria, serviços, demandas, benefícios federais via Gov.br
+- **Prefeito** — dashboard executivo, captação de recursos, IA estratégica, relatórios, social listening
+- **Governador** — visão estadual consolidada, secretarias estaduais, repasses federais, comunicados
+- **Secretarias** — módulos por área (Saúde, Educação, Finanças, Infraestrutura, Segurança, Assistência)
+- **Parceiros** — portal comercial com indicações, comissões e CRM
+- **Admin** — gestão global de tenants, usuários, billing, auditoria
 
 ---
 
@@ -41,14 +50,21 @@ NovaeXis conecta todos os atores do ecossistema público:
 - **UI**: shadcn/ui + Radix UI primitives
 - **Backend**: Lovable Cloud (Supabase) — PostgreSQL + Edge Functions + Auth + Storage
 - **IA**: Lovable AI Gateway (modelos para briefings, sugestões, análises)
+- **Auth**: Supabase Auth + Gov.br OIDC (planejado) + fallback email/senha
 - **Roteamento**: file-based em `src/routes/`
+
+### Multi-Tenancy
+- `tenant_id UUID NOT NULL` em todas as tabelas operacionais
+- RLS habilitado com policies baseadas em `auth.uid()` + `tenant_id`
+- Estado é tenant especial (`tipo='estado'`)
+- Governador tem leitura cross-tenant (sem dados pessoais — LGPD)
+- Coluna `reseller_id` para parceiros desde o schema inicial
 
 ### Padrões Críticos
 - ⚠️ Roles em tabela separada (`user_roles`), nunca em `profiles` (segurança)
-- ⚠️ RLS habilitado em todas as tabelas com dados sensíveis
-- ⚠️ Funções `SECURITY DEFINER` para checagem de permissões
-- ⚠️ Multi-tenant: isolamento via `tenant_id` em policies RLS
-- ⚠️ Design system: nunca usar `text-white`, `bg-black` — sempre tokens semânticos
+- ⚠️ Funções `SECURITY DEFINER` com `search_path = public` para checagens
+- ⚠️ Design system: nunca usar `text-white`, `bg-black` — sempre tokens semânticos em `oklch`
+- ⚠️ Toda rota com loader DEVE ter `errorComponent` e `notFoundComponent`
 
 ---
 
@@ -57,11 +73,11 @@ NovaeXis conecta todos os atores do ecossistema público:
 | Rota | Descrição |
 |------|-----------|
 | `/` | Landing page institucional |
-| `/login` | Autenticação |
-| `/onboarding` | Provisionamento de novo tenant |
+| `/login` | Autenticação (Gov.br + email/senha) |
+| `/onboarding` | Wizard de cadastro de novo município |
 | `/cidadao` | Dashboard cidadão (saúde, educação, serviços, ouvidoria) |
 | `/prefeito` | Dashboard prefeito (briefing, KPIs, captação, IA, social) |
-| `/governador` | Dashboard estadual (municípios, comunicados, repasses) |
+| `/governador` | Dashboard estadual (secretarias, comunicados, repasses) |
 | `/secretaria` + `/painel/secretaria/$slug` | Módulos por secretaria |
 | `/parceiro` | Portal comercial (leads, comissões, CRM) |
 | `/admin` | Painel global (tenants, billing, usuários, auditoria) |
@@ -74,15 +90,28 @@ NovaeXis conecta todos os atores do ecossistema público:
 ### Tabelas principais
 - `profiles` — perfil do usuário (com `notifications_enabled`)
 - `user_roles` — roles separadas (admin, prefeito, governador, parceiro, etc.)
-- `tenants` — municípios/estados
-- `leads_comerciais` — pipeline comercial dos parceiros (com RLS por `reseller_id`)
+- `tenants` — municípios e estado (com `tipo`, `ibge_codigo`, `populacao`, `idhm`, `bioma`)
+- `secretarias` — secretarias por tenant
+- `leads_comerciais` — pipeline comercial dos parceiros (RLS por `reseller_id`)
 - `notifications` — central de notificações por usuário
-- `municipios`, `resellers`, `audit_logs`, `config_globais`, `billing`
-- Tabelas de domínio: `demandas`, `agendamentos_saude`, `matriculas_educacao`, `comunicados_estado`, `repasses`, etc.
+- `demandas`, `agendamentos_saude`, `matriculas`
+- `kpis`, `alertas_prazos`
+- `mencoes_sociais`, `scores_aprovacao`
+- `integradores`, `sync_logs`, `mapeamentos_importacao`, `insights_cruzados`
+- `audit_logs`, `rate_limits`, `config_globais`, `billing`
 
-### Triggers automáticos
-- `handle_lead_status_change` — cria notificação automática quando status de lead muda
-- Triggers de auditoria para alterações sensíveis
+### Funções DB existentes
+- `has_role(_user_id, _role)` — checagem de role
+- `has_role_in_tenant(_user_id, _role, _tenant)` — role por tenant
+- `get_user_tenant(_user_id)` — tenant do usuário
+- `get_user_secretaria_slug(_user_id)` — secretaria do secretário
+- `get_user_reseller(_user_id)` — reseller do parceiro
+- `is_superadmin(_user_id)` — checagem superadmin
+- `handle_new_user()` — trigger de criação de profile no signup
+- `log_action(action, target_id, payload, severity)` — auditoria
+- `check_rate_limit(tenant_id, funcao, limite)` — rate limiting
+- `update_updated_at_column()` — trigger de timestamp
+- `rls_auto_enable()` — event trigger que ativa RLS automaticamente
 
 ---
 
@@ -92,19 +121,19 @@ Localizadas em `supabase/functions/`:
 
 | Função | Propósito |
 |--------|-----------|
-| `agente-prefeito` | Chat IA para prefeito |
-| `agente-governador` | Chat IA estadual |
+| `agente-prefeito` | Chat IA estratégico para prefeito |
+| `agente-governador` | Chat IA estadual (3 blocos: situação/problemas/estratégias) |
 | `agente-secretario` | Chat IA por secretaria |
-| `gerar-briefing-semanal` | Briefing executivo semanal |
+| `gerar-briefing-semanal` | Briefing executivo semanal em PDF |
 | `analisar-arquivo` | Análise de documentos via IA |
-| `benchmark-automatico` | Comparação inter-municípios |
-| `monitor-captacao` | Monitor de oportunidades de recursos |
-| `social-intel-coletor` | Coleta de menções nas redes |
-| `sugerir-resposta-social` | Sugestões de resposta IA |
+| `benchmark-automatico` | Comparação inter-municípios (cron semanal) |
+| `monitor-captacao` | Monitor de editais DOU/Diário PA |
+| `social-intel-coletor` | Coleta de menções (cron 6h) |
+| `sugerir-resposta-social` | Sugestões de resposta IA para menções |
 | `demo-snapshot` | Snapshot read-only para `/demo` |
 | `seed-demo` | Popula tenant Marajoense de demo |
 | `onboarding-tenant` | Provisiona novo tenant |
-| `processar-importacao` | Importação de planilhas |
+| `processar-importacao` | Importação assistida por IA (Estratégia 4) |
 | `admin-users`, `get-audit-logs-admin`, `reset-demo-passwords` | Operações administrativas |
 
 ---
@@ -113,8 +142,9 @@ Localizadas em `supabase/functions/`:
 
 - Tabela `notifications` com RLS (usuário só vê as próprias)
 - Coluna `notifications_enabled` em `profiles` para preferências
-- Trigger `handle_lead_status_change` cria notificações automaticamente quando o status de um `lead_comercial` muda
+- Trigger `handle_lead_status_change` cria notificações automaticamente quando status de lead muda
 - Hook `usePushNotifications` em `src/hooks/`
+- Push notifications via Web Push API (PWA do cidadão)
 
 ---
 
@@ -141,11 +171,7 @@ A rota possui um `errorComponent` avançado que exibe:
    - **Filtrado (App)**: apenas linhas do código do projeto (oculta `node_modules`)
    - **Tudo (Node)**: stack completo
 4. **Botão "Copiar"** — copia mensagem + stack para clipboard
-5. **Botão "Gerar Ticket"** — gera resumo formatado com:
-   - ID único do erro
-   - Arquivo, local, mensagem
-   - Trecho do stack (5 primeiras linhas filtradas)
-   - URL e timestamp
+5. **Botão "Gerar Ticket"** — gera resumo formatado com ID único, arquivo, local, mensagem, trecho do stack (5 primeiras linhas filtradas), URL e timestamp
 6. **Recarregar e Validar** — invalida router e tenta novamente
 7. **Logs no console** automáticos para auditoria
 
@@ -192,8 +218,11 @@ bun run format   # Prettier
 - ✅ RLS em todas as tabelas multi-tenant
 - ✅ Roles em tabela separada (`user_roles`)
 - ✅ Funções `SECURITY DEFINER` para checagem segura
-- ✅ Auditoria via `audit_logs`
+- ✅ Auditoria via `audit_logs` + `log_action`
+- ✅ Rate limiting via `check_rate_limit`
 - ✅ Secrets gerenciados via Lovable Cloud (nunca em código)
+- ✅ Event trigger `rls_auto_enable` ativa RLS automaticamente em novas tabelas
+- ✅ Storage buckets privados: `matriculas`, `demandas`, `relatorios`, `arquivos-importacao`
 
 ---
 
