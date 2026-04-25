@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Database, Users, Building2, FileBarChart, CreditCard, Activity, Handshake, Sliders } from "lucide-react";
+import { Loader2, Database, Users, Building2, FileBarChart, CreditCard, Activity, Handshake, Sliders, Briefcase } from "lucide-react";
 import { MunicipiosManager } from "@/components/admin/MunicipiosManager";
 import { UsuariosManager } from "@/components/admin/UsuariosManager";
 import { BillingManager } from "@/components/admin/BillingManager";
 import { AuditLogsManager } from "@/components/admin/AuditLogsManager";
 import { ResellersManager } from "@/components/admin/ResellersManager";
 import { ConfigGlobaisManager } from "@/components/admin/ConfigGlobaisManager";
+import { CRMLeadsManager } from "@/components/admin/CRMLeadsManager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — NovaeXis" }] }),
@@ -54,6 +55,9 @@ function AdminPanel() {
           <TabsTrigger value="resellers" className="gap-2">
             <Handshake className="h-4 w-4" /> Resellers
           </TabsTrigger>
+          <TabsTrigger value="crm" className="gap-2">
+            <Briefcase className="h-4 w-4" /> CRM
+          </TabsTrigger>
           <TabsTrigger value="auditoria" className="gap-2">
             <Activity className="h-4 w-4" /> Auditoria
           </TabsTrigger>
@@ -80,6 +84,10 @@ function AdminPanel() {
 
         <TabsContent value="resellers" className="mt-5">
           <ResellersManager />
+        </TabsContent>
+
+        <TabsContent value="crm" className="mt-5">
+          <CRMLeadsManager />
         </TabsContent>
 
         <TabsContent value="auditoria" className="mt-5">
