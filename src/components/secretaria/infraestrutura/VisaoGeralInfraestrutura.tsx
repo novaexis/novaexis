@@ -11,13 +11,17 @@ import {
   CheckCircle2,
   Zap
 } from "lucide-react";
-import { useSecretaria } from "@/hooks/useSecretaria";
+import { useSecretaria, KPISecretaria } from "@/hooks/useSecretaria";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function VisaoGeralInfraestrutura() {
-  const { kpis, isLoading } = useSecretaria("infraestrutura");
+interface VisaoGeralInfraestruturaProps {
+  kpis: KPISecretaria[];
+}
+
+export function VisaoGeralInfraestrutura({ kpis }: VisaoGeralInfraestruturaProps) {
+  const { loading } = useSecretaria("infraestrutura");
 
   // Busca dados de contratos de obras
   const { data: obras, isLoading: isLoadingObras } = useQuery({
@@ -26,7 +30,7 @@ export function VisaoGeralInfraestrutura() {
       const { data, error } = await supabase
         .from("contratos_obras")
         .select("*")
-        .order("progresso_fisico", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(4);
       
       if (error) throw error;
@@ -34,7 +38,7 @@ export function VisaoGeralInfraestrutura() {
     },
   });
 
-  if (isLoading || isLoadingObras) {
+  if (loading || isLoadingObras) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -57,7 +61,7 @@ export function VisaoGeralInfraestrutura() {
             <Construction className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kpis?.find(k => k.label.includes("Andamento"))?.value || "12"}</div>
+            <div className="text-2xl font-bold">{kpis?.find(k => k.indicador.includes("Andamento"))?.valor || "12"}</div>
             <p className="text-xs text-muted-foreground">+2 iniciadas este mês</p>
           </CardContent>
         </Card>
@@ -110,33 +114,37 @@ export function VisaoGeralInfraestrutura() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {obras?.map((obra) => (
-                <div key={obra.id} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">{obra.objeto}</p>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <MapPin className="mr-1 h-3 w-3" />
-                        Trecho Sul - Lote 02
+              {obras?.map((obra) => {
+                const progresso = Math.round(((obra.valor_executado || 0) / (obra.valor_total || 1)) * 100);
+                return (
+                  <div key={obra.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium leading-none">{obra.descricao}</p>
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <MapPin className="mr-1 h-3 w-3" />
+                          {obra.bairro || "Diversos"}
+                        </div>
                       </div>
+                      <Badge variant={progresso > 80 ? "outline" : "secondary"}>
+                        {progresso}%
+                      </Badge>
                     </div>
-                    <Badge variant={obra.progresso_fisico > 80 ? "outline" : "secondary"}>
-                      {obra.progresso_fisico}%
-                    </Badge>
+                    <Progress value={progresso} className="h-2" />
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> 
+                        Prev. Entrega: {new Date(obra.data_fim_prevista || "").toLocaleDateString()}
+                      </span>
+                      <span>R$ {(Number(obra.valor_total) / 1000000).toFixed(1)}M</span>
+                    </div>
                   </div>
-                  <Progress value={obra.progresso_fisico} className="h-2" />
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> 
-                      Prev. Entrega: {new Date(obra.data_fim || "").toLocaleDateString()}
-                    </span>
-                    <span>R$ {(Number(obra.valor_total) / 1000000).toFixed(1)}M</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
+... keep existing code
 
         {/* Status de Manutenção Urbana */}
         <Card className="col-span-3">
