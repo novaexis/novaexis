@@ -9,6 +9,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 // Configuration from environment
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+// Use direct URL for Deno tests if needed, but local env should have it
+if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+  throw new Error("Missing Supabase environment variables (URL, SERVICE_ROLE, or ANON). Ensure they are set in the testing environment.");
+}
 
 // We use the admin client to setup test data
 const adminClient = createClient(supabaseUrl, serviceRoleKey);
