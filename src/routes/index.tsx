@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import {
   Building2,
@@ -11,7 +15,12 @@ import {
   Globe2,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  Loader2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import mockupPrefeito from "@/assets/landing-mockup-prefeito.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -84,16 +93,25 @@ function LandingPage() {
                 Comece grátis — 14 dias <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
-            <a href="#produto">
+            <Link to="/demo/prefeito">
               <Button size="lg" variant="ghost" className="text-white hover:bg-white/10">
-                Ver como funciona
+                <Eye className="mr-1.5 h-4 w-4" /> Ver demo ao vivo
               </Button>
-            </a>
+            </Link>
           </div>
           <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-white/80">
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> Login Gov.br</span>
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> IA estratégica nativa</span>
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> Multi-tenant seguro</span>
+          </div>
+          <div className="mt-12 flex justify-center">
+            <img
+              src={mockupPrefeito}
+              alt="Painel do prefeito NovaeXis com KPIs, demandas e mapa do Pará"
+              width={1024}
+              height={640}
+              className="rounded-2xl border border-white/10 shadow-2xl ring-1 ring-white/20"
+            />
           </div>
         </div>
       </section>
@@ -203,26 +221,35 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA + Lead form */}
       <section
         id="planos"
         className="relative overflow-hidden px-4 py-20 sm:px-6"
         style={{ background: "var(--gradient-success)" }}
       >
-        <div className="mx-auto max-w-3xl text-center text-white">
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
-            Pronto para modernizar sua prefeitura?
-          </h2>
-          <p className="mt-4 text-white/85">
-            Agende uma demonstração com dados de municípios fictícios do Pará e veja na prática.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/login">
-              <Button size="lg" variant="secondary" className="font-semibold">
-                Entrar na plataforma
-              </Button>
-            </Link>
+        <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="text-white">
+            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+              Vamos conversar?
+            </h2>
+            <p className="mt-4 text-white/85">
+              Preencha ao lado e nossa equipe entra em contato em até 24h. Ou comece agora mesmo
+              com 14 dias grátis — sem cartão de crédito.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/onboarding">
+                <Button size="lg" variant="secondary" className="font-semibold">
+                  Começar grátis <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/demo/prefeito">
+                <Button size="lg" variant="ghost" className="text-white hover:bg-white/10">
+                  <Eye className="mr-1.5 h-4 w-4" /> Ver demo
+                </Button>
+              </Link>
+            </div>
           </div>
+          <LeadForm />
         </div>
       </section>
 
@@ -233,5 +260,96 @@ function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function LeadForm() {
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    municipio: "",
+    cargo: "",
+    observacoes: "",
+  });
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.nome || !form.email) {
+      toast.error("Nome e email são obrigatórios");
+      return;
+    }
+    setEnviando(true);
+    try {
+      const { error } = await supabase.from("leads_comerciais").insert({
+        ...form,
+        telefone: form.telefone || null,
+        municipio: form.municipio || null,
+        cargo: form.cargo || null,
+        observacoes: form.observacoes || null,
+        origem: "landing_page",
+      });
+      if (error) throw error;
+      setEnviado(true);
+      toast.success("Recebemos seu contato!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (enviado) {
+    return (
+      <Card className="p-8 text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+        <h3 className="mt-4 text-lg font-semibold">Obrigado!</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Recebemos seu contato. Nossa equipe entra em contato em breve.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-base font-semibold">Fale com a nossa equipe</h3>
+      <form onSubmit={enviar} className="mt-4 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="ln">Nome*</Label>
+            <Input id="ln" required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="le">Email*</Label>
+            <Input id="le" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="lt">Telefone</Label>
+            <Input id="lt" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="lc">Cargo</Label>
+            <Input id="lc" placeholder="Prefeito, Secretário…" value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="mt-1" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="lm">Município</Label>
+          <Input id="lm" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <Label htmlFor="lo">Mensagem</Label>
+          <Textarea id="lo" rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="mt-1" />
+        </div>
+        <Button type="submit" disabled={enviando} className="w-full" size="lg">
+          {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Enviar
+        </Button>
+      </form>
+    </Card>
   );
 }

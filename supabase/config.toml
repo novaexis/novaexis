@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.onboarding-tenant]
 verify_jwt = true
+
+[functions.demo-snapshot]
+verify_jwt = false

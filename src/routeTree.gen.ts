@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SecretariaRouteImport } from './routes/secretaria'
 import { Route as PrefeitoRouteImport } from './routes/prefeito'
+import { Route as ParceiroRouteImport } from './routes/parceiro'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GovernadorRouteImport } from './routes/governador'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as CidadaoRouteImport } from './routes/cidadao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,6 +28,9 @@ import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao
 import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
 import { Route as GovernadorMunicipiosRouteImport } from './routes/governador.municipios'
 import { Route as GovernadorComunicadosRouteImport } from './routes/governador.comunicados'
+import { Route as DemoPrefeitoRouteImport } from './routes/demo.prefeito'
+import { Route as DemoGovernadorRouteImport } from './routes/demo.governador'
+import { Route as DemoCidadaoRouteImport } from './routes/demo.cidadao'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
@@ -50,6 +55,11 @@ const PrefeitoRoute = PrefeitoRouteImport.update({
   path: '/prefeito',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParceiroRoute = ParceiroRouteImport.update({
+  id: '/parceiro',
+  path: '/parceiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -63,6 +73,11 @@ const LoginRoute = LoginRouteImport.update({
 const GovernadorRoute = GovernadorRouteImport.update({
   id: '/governador',
   path: '/governador',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CidadaoRoute = CidadaoRouteImport.update({
@@ -124,6 +139,21 @@ const GovernadorComunicadosRoute = GovernadorComunicadosRouteImport.update({
   id: '/comunicados',
   path: '/comunicados',
   getParentRoute: () => GovernadorRoute,
+} as any)
+const DemoPrefeitoRoute = DemoPrefeitoRouteImport.update({
+  id: '/prefeito',
+  path: '/prefeito',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoGovernadorRoute = DemoGovernadorRouteImport.update({
+  id: '/governador',
+  path: '/governador',
+  getParentRoute: () => DemoRoute,
+} as any)
+const DemoCidadaoRoute = DemoCidadaoRouteImport.update({
+  id: '/cidadao',
+  path: '/cidadao',
+  getParentRoute: () => DemoRoute,
 } as any)
 const CidadaoServicosRoute = CidadaoServicosRouteImport.update({
   id: '/servicos',
@@ -201,15 +231,20 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/parceiro': typeof ParceiroRoute
   '/prefeito': typeof PrefeitoRouteWithChildren
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/demo/cidadao': typeof DemoCidadaoRoute
+  '/demo/governador': typeof DemoGovernadorRoute
+  '/demo/prefeito': typeof DemoPrefeitoRoute
   '/governador/comunicados': typeof GovernadorComunicadosRoute
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
@@ -233,14 +268,19 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/parceiro': typeof ParceiroRoute
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/demo/cidadao': typeof DemoCidadaoRoute
+  '/demo/governador': typeof DemoGovernadorRoute
+  '/demo/prefeito': typeof DemoPrefeitoRoute
   '/governador/comunicados': typeof GovernadorComunicadosRoute
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
@@ -265,15 +305,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/cidadao': typeof CidadaoRouteWithChildren
+  '/demo': typeof DemoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/parceiro': typeof ParceiroRoute
   '/prefeito': typeof PrefeitoRouteWithChildren
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/demo/cidadao': typeof DemoCidadaoRoute
+  '/demo/governador': typeof DemoGovernadorRoute
+  '/demo/prefeito': typeof DemoPrefeitoRoute
   '/governador/comunicados': typeof GovernadorComunicadosRoute
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
@@ -299,15 +344,20 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cidadao'
+    | '/demo'
     | '/governador'
     | '/login'
     | '/onboarding'
+    | '/parceiro'
     | '/prefeito'
     | '/secretaria'
     | '/cidadao/educacao'
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/demo/cidadao'
+    | '/demo/governador'
+    | '/demo/prefeito'
     | '/governador/comunicados'
     | '/governador/municipios'
     | '/prefeito/benchmark'
@@ -331,14 +381,19 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cidadao'
+    | '/demo'
     | '/governador'
     | '/login'
     | '/onboarding'
+    | '/parceiro'
     | '/secretaria'
     | '/cidadao/educacao'
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/demo/cidadao'
+    | '/demo/governador'
+    | '/demo/prefeito'
     | '/governador/comunicados'
     | '/governador/municipios'
     | '/prefeito/benchmark'
@@ -362,15 +417,20 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cidadao'
+    | '/demo'
     | '/governador'
     | '/login'
     | '/onboarding'
+    | '/parceiro'
     | '/prefeito'
     | '/secretaria'
     | '/cidadao/educacao'
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/demo/cidadao'
+    | '/demo/governador'
+    | '/demo/prefeito'
     | '/governador/comunicados'
     | '/governador/municipios'
     | '/prefeito/benchmark'
@@ -395,9 +455,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CidadaoRoute: typeof CidadaoRouteWithChildren
+  DemoRoute: typeof DemoRouteWithChildren
   GovernadorRoute: typeof GovernadorRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  ParceiroRoute: typeof ParceiroRoute
   PrefeitoRoute: typeof PrefeitoRouteWithChildren
   SecretariaRoute: typeof SecretariaRoute
   PainelSecretariaSlugRoute: typeof PainelSecretariaSlugRoute
@@ -419,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrefeitoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parceiro': {
+      id: '/parceiro'
+      path: '/parceiro'
+      fullPath: '/parceiro'
+      preLoaderRoute: typeof ParceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -438,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/governador'
       fullPath: '/governador'
       preLoaderRoute: typeof GovernadorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cidadao': {
@@ -523,6 +599,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/governador/comunicados'
       preLoaderRoute: typeof GovernadorComunicadosRouteImport
       parentRoute: typeof GovernadorRoute
+    }
+    '/demo/prefeito': {
+      id: '/demo/prefeito'
+      path: '/prefeito'
+      fullPath: '/demo/prefeito'
+      preLoaderRoute: typeof DemoPrefeitoRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/governador': {
+      id: '/demo/governador'
+      path: '/governador'
+      fullPath: '/demo/governador'
+      preLoaderRoute: typeof DemoGovernadorRouteImport
+      parentRoute: typeof DemoRoute
+    }
+    '/demo/cidadao': {
+      id: '/demo/cidadao'
+      path: '/cidadao'
+      fullPath: '/demo/cidadao'
+      preLoaderRoute: typeof DemoCidadaoRouteImport
+      parentRoute: typeof DemoRoute
     }
     '/cidadao/servicos': {
       id: '/cidadao/servicos'
@@ -675,6 +772,20 @@ const CidadaoRouteChildren: CidadaoRouteChildren = {
 const CidadaoRouteWithChildren =
   CidadaoRoute._addFileChildren(CidadaoRouteChildren)
 
+interface DemoRouteChildren {
+  DemoCidadaoRoute: typeof DemoCidadaoRoute
+  DemoGovernadorRoute: typeof DemoGovernadorRoute
+  DemoPrefeitoRoute: typeof DemoPrefeitoRoute
+}
+
+const DemoRouteChildren: DemoRouteChildren = {
+  DemoCidadaoRoute: DemoCidadaoRoute,
+  DemoGovernadorRoute: DemoGovernadorRoute,
+  DemoPrefeitoRoute: DemoPrefeitoRoute,
+}
+
+const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
+
 interface GovernadorRouteChildren {
   GovernadorComunicadosRoute: typeof GovernadorComunicadosRoute
   GovernadorMunicipiosRoute: typeof GovernadorMunicipiosRoute
@@ -733,9 +844,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CidadaoRoute: CidadaoRouteWithChildren,
+  DemoRoute: DemoRouteWithChildren,
   GovernadorRoute: GovernadorRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  ParceiroRoute: ParceiroRoute,
   PrefeitoRoute: PrefeitoRouteWithChildren,
   SecretariaRoute: SecretariaRoute,
   PainelSecretariaSlugRoute: PainelSecretariaSlugRoute,
