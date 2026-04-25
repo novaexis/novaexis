@@ -49,9 +49,22 @@ export const Route = createFileRoute("/parceiro")({
     const errorMsg = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : "";
     const [showStack, setShowStack] = useState(false);
+    const [filterStack, setFilterStack] = useState(true);
     
     const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/) || errorMsg.match(/line (\d+)/);
     const lineInfo = lineMatch ? `Linha: ${lineMatch[1]}` : "Localização não identificada";
+
+    const filteredStack = useMemo(() => {
+      if (!errorStack) return "";
+      if (!filterStack) return errorStack;
+      return errorStack
+        .split("\n")
+        .filter(line => 
+          (line.includes("src/") || line.includes("parceiro.tsx")) && 
+          !line.includes("node_modules")
+        )
+        .join("\n");
+    }, [errorStack, filterStack]);
 
     const getGuidance = (msg: string) => {
       if (msg.includes("is not defined")) {
@@ -81,7 +94,7 @@ export const Route = createFileRoute("/parceiro")({
 
     const generateTicketSummary = () => {
       const errorId = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const stackSnippet = errorStack ? errorStack.split("\n").slice(0, 5).join("\n") : "N/A";
+      const stackSnippet = filteredStack ? filteredStack.split("\n").slice(0, 5).join("\n") : "N/A";
       const summary = `
 🎫 TICKET DE ERRO [#${errorId}]
 ---------------------------
@@ -89,7 +102,7 @@ ARQUIVO: src/routes/parceiro.tsx
 LOCAL: ${lineInfo}
 MENSAGEM: ${errorMsg}
 
-TRECHO DO STACK:
+TRECHO DO STACK (FILTRADO):
 ${stackSnippet}
 ---------------------------
 URL: ${window.location.href}
@@ -149,16 +162,28 @@ DATA: ${new Date().toLocaleString()}
               
               {errorStack && (
                 <div className="mt-2 border-t border-slate-800 pt-2">
-                  <button 
-                    onClick={() => setShowStack(!showStack)}
-                    className="flex w-full items-center justify-between text-slate-500 hover:text-slate-300"
-                  >
-                    <span>Stack Trace Completo</span>
-                    {showStack ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
+                  <div className="flex items-center justify-between text-slate-500 mb-2">
+                    <button 
+                      onClick={() => setShowStack(!showStack)}
+                      className="flex items-center gap-2 hover:text-slate-300"
+                    >
+                      <span>Stack Trace</span>
+                      {showStack ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+                    {showStack && (
+                      <button 
+                        onClick={() => setFilterStack(!filterStack)}
+                        className="flex items-center gap-1.5 text-[10px] hover:text-slate-300"
+                        title={filterStack ? "Mostrar tudo" : "Apenas meu código"}
+                      >
+                        {filterStack ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        {filterStack ? "Filtrado (App)" : "Tudo (Node)"}
+                      </button>
+                    )}
+                  </div>
                   {showStack && (
-                    <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre text-[10px] text-slate-400">
-                      {errorStack}
+                    <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre text-[10px] text-slate-400">
+                      {filteredStack || "Nenhuma linha correspondente no código do app."}
                     </pre>
                   )}
                 </div>
