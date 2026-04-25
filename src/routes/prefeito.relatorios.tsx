@@ -189,6 +189,26 @@ function RelatoriosPage() {
     }
   }
 
+  async function excluirRelatorio(id: string, path: string | null) {
+    if (!confirm("Excluir este relatório? Esta ação não pode ser desfeita.")) return;
+    try {
+      if (path) {
+        const { error: stErr } = await supabase.storage.from("relatorios").remove([path]);
+        if (stErr) throw stErr;
+      }
+      const { error: dbErr } = await supabase
+        .from("relatorios_executivos")
+        .delete()
+        .eq("id", id);
+      if (dbErr) throw dbErr;
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Relatório excluído");
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir relatório");
+    }
+  }
+
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
