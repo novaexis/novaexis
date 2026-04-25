@@ -12,6 +12,7 @@ import {
   Download,
   Eye,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { gerarRelatorioHTML, type RelatorioInput } from "@/lib/relatorio-html";
 
