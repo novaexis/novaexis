@@ -93,16 +93,25 @@ function LandingPage() {
                 Comece grátis — 14 dias <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
-            <a href="#produto">
+            <Link to="/demo/prefeito">
               <Button size="lg" variant="ghost" className="text-white hover:bg-white/10">
-                Ver como funciona
+                <Eye className="mr-1.5 h-4 w-4" /> Ver demo ao vivo
               </Button>
-            </a>
+            </Link>
           </div>
           <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-white/80">
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> Login Gov.br</span>
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> IA estratégica nativa</span>
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4" /> Multi-tenant seguro</span>
+          </div>
+          <div className="mt-12 flex justify-center">
+            <img
+              src={mockupPrefeito}
+              alt="Painel do prefeito NovaeXis com KPIs, demandas e mapa do Pará"
+              width={1024}
+              height={640}
+              className="rounded-2xl border border-white/10 shadow-2xl ring-1 ring-white/20"
+            />
           </div>
         </div>
       </section>
