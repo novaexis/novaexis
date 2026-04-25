@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Database, Users } from "lucide-react";
+import { Loader2, Database, Users, Building2, FileBarChart } from "lucide-react";
+import { MunicipiosManager } from "@/components/admin/MunicipiosManager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — NovaeXis" }] }),
@@ -21,6 +23,38 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPanel() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">SaaS Admin</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Controle global da plataforma NovaeXis
+        </p>
+      </header>
+
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview" className="gap-2">
+            <FileBarChart className="h-4 w-4" /> Visão geral
+          </TabsTrigger>
+          <TabsTrigger value="municipios" className="gap-2">
+            <Building2 className="h-4 w-4" /> Municípios
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-5">
+          <OverviewTab />
+        </TabsContent>
+
+        <TabsContent value="municipios" className="mt-5">
+          <MunicipiosManager />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function OverviewTab() {
   const [stats, setStats] = useState({ tenants: 0, users: 0, demandas: 0 });
   const [seeding, setSeeding] = useState(false);
   const [demoPassword, setDemoPassword] = useState<string | null>(null);
@@ -60,10 +94,8 @@ function AdminPanel() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-      <h1 className="mb-6 text-2xl font-bold tracking-tight">SaaS Admin</h1>
-
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+    <>
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Card className="p-4">
           <Database className="h-5 w-5 text-primary" />
           <p className="mt-3 text-xs uppercase text-muted-foreground">Tenants</p>
@@ -109,6 +141,6 @@ function AdminPanel() {
           </div>
         )}
       </Card>
-    </div>
+    </>
   );
 }
