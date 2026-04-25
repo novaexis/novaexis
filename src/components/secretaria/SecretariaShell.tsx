@@ -20,6 +20,7 @@ interface SecretariaShellProps {
   indicadores: ReactNode;
   relatorios: ReactNode;
   integracoes?: ReactNode;
+  assessoriaIA?: ReactNode;
   acoes?: ReactNode;
 }
 
@@ -36,6 +37,7 @@ export function SecretariaShell({
   indicadores,
   relatorios,
   integracoes,
+  assessoriaIA,
   acoes,
 }: SecretariaShellProps) {
   const { primaryRole } = useAuth();
@@ -105,6 +107,7 @@ export function SecretariaShell({
             <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
             <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
             {integracoes && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
+            {assessoriaIA && <TabsTrigger value="ia">Assessoria IA</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="visao" className="mt-4">{visaoGeral}</TabsContent>
@@ -112,6 +115,7 @@ export function SecretariaShell({
           <TabsContent value="indicadores" className="mt-4">{indicadores}</TabsContent>
           <TabsContent value="relatorios" className="mt-4">{relatorios}</TabsContent>
           {integracoes && <TabsContent value="integracoes" className="mt-4">{integracoes}</TabsContent>}
+          {assessoriaIA && <TabsContent value="ia" className="mt-4">{assessoriaIA}</TabsContent>}
         </Tabs>
       )}
     </div>
