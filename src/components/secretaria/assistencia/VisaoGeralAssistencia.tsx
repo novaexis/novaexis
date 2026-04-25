@@ -115,16 +115,16 @@ export function VisaoGeralAssistencia({ kpis }: VisaoGeralAssistenciaProps) {
                       <Users className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{at.tipo_atendimento}</p>
+                      <p className="font-medium text-sm">{at.tipo_servico || "Atendimento Social"}</p>
                       <div className="flex items-center text-xs text-muted-foreground">
                         <MapPin className="mr-1 h-3 w-3" />
-                        {at.unidade_atendimento}
+                        {at.unidade}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={at.status === "Concluído" ? "outline" : "default"} className="text-[10px] h-4">
-                      {at.status}
+                    <Badge variant="outline" className="text-[10px] h-4">
+                      Realizado
                     </Badge>
                     <p className="text-[10px] text-muted-foreground mt-1">
                       {new Date(at.data_atendimento).toLocaleDateString()}
