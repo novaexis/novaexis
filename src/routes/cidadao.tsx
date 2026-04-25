@@ -171,23 +171,25 @@ function CidadaoHome() {
           <ul className="space-y-2">
             {demandas.map((d) => (
               <li key={d.id}>
-                <Card className="flex items-center gap-3 p-3.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-mono text-xs text-muted-foreground">
-                      #{d.protocolo}
-                    </p>
-                    <p className="mt-0.5 truncate text-sm font-medium">
-                      {d.titulo}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Aberta em {new Date(d.created_at).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1.5">
-                    <StatusBadge status={d.status} />
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </Card>
+                <Link to="/cidadao/demanda/$id" params={{ id: d.id }}>
+                  <Card className="flex items-center gap-3 p-3.5 transition hover:shadow-md">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-mono text-xs text-muted-foreground">
+                        #{d.protocolo}
+                      </p>
+                      <p className="mt-0.5 truncate text-sm font-medium">
+                        {d.titulo}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Aberta em {new Date(d.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <StatusBadge status={d.status} />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </Card>
+                </Link>
               </li>
             ))}
           </ul>
