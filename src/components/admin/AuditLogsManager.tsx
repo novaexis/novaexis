@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, RefreshCw, Eye, Activity, Users, Building2, FileText } from "lucide-react";
+import { Loader2, RefreshCw, Eye, Activity, Users, Building2, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 type AuditLog = {
@@ -42,8 +42,6 @@ type AuditLog = {
     email: string | null;
   } | null;
 };
-
-type Tenant = { id: string; nome: string; slug: string };
 
 type UsageRow = {
   tenant_id: string;
@@ -97,10 +95,6 @@ function LogsTable() {
   const [total, setTotal] = useState(0);
   const perPage = 50;
 
-  useEffect(() => {
-    void loadLogs();
-  }, [page]);
-
   async function loadLogs() {
     setLoading(true);
     try {
@@ -121,28 +115,49 @@ function LogsTable() {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        // Tratar erro padronizado da function
+        let message = "Erro ao carregar logs";
+        let code = "";
+        
+        try {
+          const errorData = await error.context?.json();
+          if (errorData?.error) {
+            message = errorData.error.message || message;
+            code = errorData.error.code ? ` [${errorData.error.code}]` : "";
+          }
+        } catch {
+          message = error.message || message;
+        }
+        
+        throw new Error(`${message}${code}`);
+      }
       
       setLogs((data.logs ?? []) as unknown as AuditLog[]);
       setTotal(data.total ?? 0);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha ao carregar logs via API";
-      toast.error(msg);
+      console.error("Erro na consulta de auditoria:", e);
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar logs via API");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    void loadLogs();
+  }, [page]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      setPage(1);
-      void loadLogs();
+      if (page !== 1) setPage(1);
+      else void loadLogs();
     }, 300);
     return () => clearTimeout(timer);
   }, [severityFilter, actionFilter, dateFrom, dateTo]);
 
   const actions = useMemo(() => {
     const set = new Set<string>();
+    // Usamos os logs atuais para sugerir ações no filtro, mas idealmente viria de um enum ou query específica
     for (const l of logs) set.add(l.action);
     return Array.from(set).sort();
   }, [logs]);
@@ -158,6 +173,8 @@ function LogsTable() {
         l.target_id?.toLowerCase().includes(term),
     );
   }, [logs, search]);
+
+  const totalPages = Math.ceil(total / perPage);
 
   return (
     <Card className="p-4">
@@ -210,29 +227,33 @@ function LogsTable() {
         <Button variant="outline" size="sm" onClick={() => void loadLogs()} className="gap-2">
           <RefreshCw className="h-4 w-4" /> Atualizar
         </Button>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {total} registros encontrados (Página {page})
-        </span>
       </div>
 
-      <div className="mb-4 flex items-center gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          disabled={page <= 1 || loading} 
-          onClick={() => setPage(p => p - 1)}
-        >
-          Anterior
-        </Button>
-        <span className="text-sm font-medium">Página {page}</span>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          disabled={logs.length < perPage || loading} 
-          onClick={() => setPage(p => p + 1)}
-        >
-          Próxima
-        </Button>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            disabled={page <= 1 || loading} 
+            onClick={() => setPage(p => p - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium">Página {page} de {totalPages || 1}</span>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8"
+            disabled={page >= totalPages || loading} 
+            onClick={() => setPage(p => p + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {total} registros encontrados
+        </span>
       </div>
 
       {loading ? (

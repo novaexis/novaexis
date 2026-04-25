@@ -5,6 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper para formatar erros padronizados
+const errorResponse = (code: string, message: string, details?: any, status = 400) => {
+  return new Response(
+    JSON.stringify({
+      error: {
+        code,
+        message,
+        details,
+      },
+    }),
+    {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    }
+  );
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -15,23 +32,17 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // 1. Validar Autorização (Superadmin apenas)
+    // 1. Validar Autorização
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Cabeçalho de autorização ausente" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("AUTH_HEADER_MISSING", "Cabeçalho de autorização não encontrado.", null, 401);
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Não autorizado ou token inválido" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("INVALID_TOKEN", "Sessão expirada ou token inválido.", authError?.message, 401);
     }
 
     const { data: isSuperadmin, error: rpcError } = await supabase.rpc("is_superadmin", { 
@@ -39,13 +50,10 @@ Deno.serve(async (req) => {
     });
 
     if (rpcError || !isSuperadmin) {
-      return new Response(JSON.stringify({ error: "Acesso restrito a Superadmins" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("UNAUTHORIZED", "Acesso restrito a Superadmins.", rpcError?.message, 403);
     }
 
-    // 2. Extrair e validar parâmetros da URL (GET) ou Body (POST)
+    // 2. Extrair e validar parâmetros
     let params;
     if (req.method === "POST") {
       params = await req.json().catch(() => ({}));
@@ -63,11 +71,21 @@ Deno.serve(async (req) => {
 
     const { page = 1, perPage = 50, action, severity, dateFrom, dateTo } = params;
 
+    // Validação de Paginação
+    if (page < 1 || perPage < 1 || perPage > 100) {
+      return errorResponse("INVALID_PAGINATION", "Parâmetros de paginação inválidos. perPage deve estar entre 1 e 100.");
+    }
+
+    // Validação de Datas
+    if (dateFrom && isNaN(Date.parse(dateFrom))) {
+      return errorResponse("INVALID_DATE_FORMAT", "Formato da data inicial inválido.", { dateFrom });
+    }
+    if (dateTo && isNaN(Date.parse(dateTo))) {
+      return errorResponse("INVALID_DATE_FORMAT", "Formato da data final inválido.", { dateTo });
+    }
+
     if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
-      return new Response(JSON.stringify({ error: "Intervalo de datas inválido: data inicial maior que a final" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("INVALID_DATE_RANGE", "A data inicial não pode ser posterior à data final.");
     }
 
     // 3. Construir query
@@ -77,18 +95,26 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false });
 
     if (action && action !== "all") query = query.eq("action", action);
-    if (severity && severity !== "all") query = query.eq("severity", severity);
+    if (severity && severity !== "all") {
+      const validSeverities = ["info", "warning", "critical"];
+      if (!validSeverities.includes(severity)) {
+        return errorResponse("INVALID_SEVERITY", "Nível de severidade não reconhecido.", { severity, validOptions: validSeverities });
+      }
+      query = query.eq("severity", severity);
+    }
+    
     if (dateFrom) query = query.gte("created_at", `${dateFrom}T00:00:00`);
     if (dateTo) query = query.lte("created_at", `${dateTo}T23:59:59`);
 
-    // Paginação
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;
     query = query.range(from, to);
 
     const { data, count, error } = await query;
 
-    if (error) throw error;
+    if (error) {
+      return errorResponse("DATABASE_ERROR", "Erro ao consultar o histórico de auditoria.", error.message, 500);
+    }
 
     return new Response(
       JSON.stringify({
@@ -103,10 +129,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Erro na Edge Function audit-logs:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Critical Error:", error);
+    return errorResponse("INTERNAL_SERVER_ERROR", "Ocorreu um erro inesperado no servidor.", error.message, 500);
   }
 });
