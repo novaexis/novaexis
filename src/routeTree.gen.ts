@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrefeitoIndexRouteImport } from './routes/prefeito.index'
 import { Route as PrefeitoSocialRouteImport } from './routes/prefeito.social'
 import { Route as PrefeitoRelatoriosRouteImport } from './routes/prefeito.relatorios'
+import { Route as PrefeitoIntegracoesRouteImport } from './routes/prefeito.integracoes'
 import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
 import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
@@ -81,6 +82,11 @@ const PrefeitoSocialRoute = PrefeitoSocialRouteImport.update({
 const PrefeitoRelatoriosRoute = PrefeitoRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
+const PrefeitoIntegracoesRoute = PrefeitoIntegracoesRouteImport.update({
+  id: '/integracoes',
+  path: '/integracoes',
   getParentRoute: () => PrefeitoRoute,
 } as any)
 const PrefeitoCaptacaoRoute = PrefeitoCaptacaoRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito': typeof PrefeitoIndexRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito/'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito/'
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/prefeito/relatorios'
       preLoaderRoute: typeof PrefeitoRelatoriosRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
+    '/prefeito/integracoes': {
+      id: '/prefeito/integracoes'
+      path: '/integracoes'
+      fullPath: '/prefeito/integracoes'
+      preLoaderRoute: typeof PrefeitoIntegracoesRouteImport
       parentRoute: typeof PrefeitoRoute
     }
     '/prefeito/captacao': {
@@ -554,6 +573,7 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
 interface PrefeitoRouteChildren {
   PrefeitoBenchmarkRoute: typeof PrefeitoBenchmarkRoute
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
+  PrefeitoIntegracoesRoute: typeof PrefeitoIntegracoesRoute
   PrefeitoRelatoriosRoute: typeof PrefeitoRelatoriosRoute
   PrefeitoSocialRoute: typeof PrefeitoSocialRoute
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
@@ -562,6 +582,7 @@ interface PrefeitoRouteChildren {
 const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoBenchmarkRoute: PrefeitoBenchmarkRoute,
   PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
+  PrefeitoIntegracoesRoute: PrefeitoIntegracoesRoute,
   PrefeitoRelatoriosRoute: PrefeitoRelatoriosRoute,
   PrefeitoSocialRoute: PrefeitoSocialRoute,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
@@ -584,3 +605,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
