@@ -123,7 +123,7 @@ export function VisaoGeralSeguranca({ kpis }: VisaoGeralSegurancaProps) {
                     </div>
                   </div>
                   <div className="text-right text-[10px] text-muted-foreground">
-                    {new Date(oc.data_hora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(oc.data_hora || "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               ))}
