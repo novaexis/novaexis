@@ -21,6 +21,11 @@ import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
 import { Route as CidadaoEducacaoRouteImport } from './routes/cidadao.educacao'
 import { Route as GovernadorSecretariaSlugRouteImport } from './routes/governador.secretaria.$slug'
+import { Route as CidadaoServicosSolicitarRouteImport } from './routes/cidadao.servicos.solicitar'
+import { Route as CidadaoServicosOuvidoriaRouteImport } from './routes/cidadao.servicos.ouvidoria'
+import { Route as CidadaoSaudeAgendarRouteImport } from './routes/cidadao.saude.agendar'
+import { Route as CidadaoEducacaoMatricularRouteImport } from './routes/cidadao.educacao.matricular'
+import { Route as CidadaoDemandaIdRouteImport } from './routes/cidadao.demanda.$id'
 
 const SecretariaRoute = SecretariaRouteImport.update({
   id: '/secretaria',
@@ -83,6 +88,34 @@ const GovernadorSecretariaSlugRoute =
     path: '/secretaria/$slug',
     getParentRoute: () => GovernadorRoute,
   } as any)
+const CidadaoServicosSolicitarRoute =
+  CidadaoServicosSolicitarRouteImport.update({
+    id: '/solicitar',
+    path: '/solicitar',
+    getParentRoute: () => CidadaoServicosRoute,
+  } as any)
+const CidadaoServicosOuvidoriaRoute =
+  CidadaoServicosOuvidoriaRouteImport.update({
+    id: '/ouvidoria',
+    path: '/ouvidoria',
+    getParentRoute: () => CidadaoServicosRoute,
+  } as any)
+const CidadaoSaudeAgendarRoute = CidadaoSaudeAgendarRouteImport.update({
+  id: '/agendar',
+  path: '/agendar',
+  getParentRoute: () => CidadaoSaudeRoute,
+} as any)
+const CidadaoEducacaoMatricularRoute =
+  CidadaoEducacaoMatricularRouteImport.update({
+    id: '/matricular',
+    path: '/matricular',
+    getParentRoute: () => CidadaoEducacaoRoute,
+  } as any)
+const CidadaoDemandaIdRoute = CidadaoDemandaIdRouteImport.update({
+  id: '/demanda/$id',
+  path: '/demanda/$id',
+  getParentRoute: () => CidadaoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -92,10 +125,15 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
-  '/cidadao/educacao': typeof CidadaoEducacaoRoute
+  '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
-  '/cidadao/saude': typeof CidadaoSaudeRoute
-  '/cidadao/servicos': typeof CidadaoServicosRoute
+  '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
+  '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
+  '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
+  '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
+  '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
+  '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRoutesByTo {
@@ -106,10 +144,15 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
-  '/cidadao/educacao': typeof CidadaoEducacaoRoute
+  '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
-  '/cidadao/saude': typeof CidadaoSaudeRoute
-  '/cidadao/servicos': typeof CidadaoServicosRoute
+  '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
+  '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
+  '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
+  '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
+  '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
+  '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRoutesById {
@@ -121,10 +164,15 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
-  '/cidadao/educacao': typeof CidadaoEducacaoRoute
+  '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
-  '/cidadao/saude': typeof CidadaoSaudeRoute
-  '/cidadao/servicos': typeof CidadaoServicosRoute
+  '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
+  '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
+  '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
+  '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
+  '/cidadao/servicos/ouvidoria': typeof CidadaoServicosOuvidoriaRoute
+  '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
 }
 export interface FileRouteTypes {
@@ -141,6 +189,11 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/cidadao/demanda/$id'
+    | '/cidadao/educacao/matricular'
+    | '/cidadao/saude/agendar'
+    | '/cidadao/servicos/ouvidoria'
+    | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,6 +208,11 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/cidadao/demanda/$id'
+    | '/cidadao/educacao/matricular'
+    | '/cidadao/saude/agendar'
+    | '/cidadao/servicos/ouvidoria'
+    | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
   id:
     | '__root__'
@@ -169,6 +227,11 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/cidadao/demanda/$id'
+    | '/cidadao/educacao/matricular'
+    | '/cidadao/saude/agendar'
+    | '/cidadao/servicos/ouvidoria'
+    | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -268,21 +331,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GovernadorSecretariaSlugRouteImport
       parentRoute: typeof GovernadorRoute
     }
+    '/cidadao/servicos/solicitar': {
+      id: '/cidadao/servicos/solicitar'
+      path: '/solicitar'
+      fullPath: '/cidadao/servicos/solicitar'
+      preLoaderRoute: typeof CidadaoServicosSolicitarRouteImport
+      parentRoute: typeof CidadaoServicosRoute
+    }
+    '/cidadao/servicos/ouvidoria': {
+      id: '/cidadao/servicos/ouvidoria'
+      path: '/ouvidoria'
+      fullPath: '/cidadao/servicos/ouvidoria'
+      preLoaderRoute: typeof CidadaoServicosOuvidoriaRouteImport
+      parentRoute: typeof CidadaoServicosRoute
+    }
+    '/cidadao/saude/agendar': {
+      id: '/cidadao/saude/agendar'
+      path: '/agendar'
+      fullPath: '/cidadao/saude/agendar'
+      preLoaderRoute: typeof CidadaoSaudeAgendarRouteImport
+      parentRoute: typeof CidadaoSaudeRoute
+    }
+    '/cidadao/educacao/matricular': {
+      id: '/cidadao/educacao/matricular'
+      path: '/matricular'
+      fullPath: '/cidadao/educacao/matricular'
+      preLoaderRoute: typeof CidadaoEducacaoMatricularRouteImport
+      parentRoute: typeof CidadaoEducacaoRoute
+    }
+    '/cidadao/demanda/$id': {
+      id: '/cidadao/demanda/$id'
+      path: '/demanda/$id'
+      fullPath: '/cidadao/demanda/$id'
+      preLoaderRoute: typeof CidadaoDemandaIdRouteImport
+      parentRoute: typeof CidadaoRoute
+    }
   }
 }
 
+interface CidadaoEducacaoRouteChildren {
+  CidadaoEducacaoMatricularRoute: typeof CidadaoEducacaoMatricularRoute
+}
+
+const CidadaoEducacaoRouteChildren: CidadaoEducacaoRouteChildren = {
+  CidadaoEducacaoMatricularRoute: CidadaoEducacaoMatricularRoute,
+}
+
+const CidadaoEducacaoRouteWithChildren = CidadaoEducacaoRoute._addFileChildren(
+  CidadaoEducacaoRouteChildren,
+)
+
+interface CidadaoSaudeRouteChildren {
+  CidadaoSaudeAgendarRoute: typeof CidadaoSaudeAgendarRoute
+}
+
+const CidadaoSaudeRouteChildren: CidadaoSaudeRouteChildren = {
+  CidadaoSaudeAgendarRoute: CidadaoSaudeAgendarRoute,
+}
+
+const CidadaoSaudeRouteWithChildren = CidadaoSaudeRoute._addFileChildren(
+  CidadaoSaudeRouteChildren,
+)
+
+interface CidadaoServicosRouteChildren {
+  CidadaoServicosOuvidoriaRoute: typeof CidadaoServicosOuvidoriaRoute
+  CidadaoServicosSolicitarRoute: typeof CidadaoServicosSolicitarRoute
+}
+
+const CidadaoServicosRouteChildren: CidadaoServicosRouteChildren = {
+  CidadaoServicosOuvidoriaRoute: CidadaoServicosOuvidoriaRoute,
+  CidadaoServicosSolicitarRoute: CidadaoServicosSolicitarRoute,
+}
+
+const CidadaoServicosRouteWithChildren = CidadaoServicosRoute._addFileChildren(
+  CidadaoServicosRouteChildren,
+)
+
 interface CidadaoRouteChildren {
-  CidadaoEducacaoRoute: typeof CidadaoEducacaoRoute
+  CidadaoEducacaoRoute: typeof CidadaoEducacaoRouteWithChildren
   CidadaoPerfilRoute: typeof CidadaoPerfilRoute
-  CidadaoSaudeRoute: typeof CidadaoSaudeRoute
-  CidadaoServicosRoute: typeof CidadaoServicosRoute
+  CidadaoSaudeRoute: typeof CidadaoSaudeRouteWithChildren
+  CidadaoServicosRoute: typeof CidadaoServicosRouteWithChildren
+  CidadaoDemandaIdRoute: typeof CidadaoDemandaIdRoute
 }
 
 const CidadaoRouteChildren: CidadaoRouteChildren = {
-  CidadaoEducacaoRoute: CidadaoEducacaoRoute,
+  CidadaoEducacaoRoute: CidadaoEducacaoRouteWithChildren,
   CidadaoPerfilRoute: CidadaoPerfilRoute,
-  CidadaoSaudeRoute: CidadaoSaudeRoute,
-  CidadaoServicosRoute: CidadaoServicosRoute,
+  CidadaoSaudeRoute: CidadaoSaudeRouteWithChildren,
+  CidadaoServicosRoute: CidadaoServicosRouteWithChildren,
+  CidadaoDemandaIdRoute: CidadaoDemandaIdRoute,
 }
 
 const CidadaoRouteWithChildren =
