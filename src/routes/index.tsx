@@ -221,26 +221,35 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA + Lead form */}
       <section
         id="planos"
         className="relative overflow-hidden px-4 py-20 sm:px-6"
         style={{ background: "var(--gradient-success)" }}
       >
-        <div className="mx-auto max-w-3xl text-center text-white">
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
-            Pronto para modernizar sua prefeitura?
-          </h2>
-          <p className="mt-4 text-white/85">
-            Agende uma demonstração com dados de municípios fictícios do Pará e veja na prática.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/login">
-              <Button size="lg" variant="secondary" className="font-semibold">
-                Entrar na plataforma
-              </Button>
-            </Link>
+        <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-2 lg:items-center">
+          <div className="text-white">
+            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+              Vamos conversar?
+            </h2>
+            <p className="mt-4 text-white/85">
+              Preencha ao lado e nossa equipe entra em contato em até 24h. Ou comece agora mesmo
+              com 14 dias grátis — sem cartão de crédito.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/onboarding">
+                <Button size="lg" variant="secondary" className="font-semibold">
+                  Começar grátis <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/demo/prefeito">
+                <Button size="lg" variant="ghost" className="text-white hover:bg-white/10">
+                  <Eye className="mr-1.5 h-4 w-4" /> Ver demo
+                </Button>
+              </Link>
+            </div>
           </div>
+          <LeadForm />
         </div>
       </section>
 
