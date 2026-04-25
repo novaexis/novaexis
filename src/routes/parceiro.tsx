@@ -54,6 +54,7 @@ function ParceiroPage() {
   const { user, loading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
   const [novo, setNovo] = useState({ nome: "", email: "", telefone: "", municipio: "", cargo: "Prefeito", observacoes: "" });
   const [enviando, setEnviando] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
@@ -77,6 +78,12 @@ function ParceiroPage() {
   }
 
   async function atualizarStatus(id: string, novoStatus: string) {
+    const backupLeads = [...leads];
+    
+    // Atualização otimista
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: novoStatus } : l));
+    setAtualizandoId(id);
+
     const { error } = await supabase
       .from("leads_comerciais")
       .update({ status: novoStatus })
@@ -84,11 +91,14 @@ function ParceiroPage() {
 
     if (error) {
       toast.error("Erro ao atualizar status: " + error.message);
-      return;
+      // Reversão em caso de erro
+      setLeads(backupLeads);
+      // Revalidação forçada
+      void carregar();
+    } else {
+      toast.success("Status atualizado!");
     }
-
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: novoStatus } : l));
-    toast.success("Status atualizado!");
+    setAtualizandoId(null);
   }
 
   async function indicar() {
@@ -299,10 +309,15 @@ function ParceiroPage() {
                           <StatusBadge status={l.status} />
                           <Select
                             value={l.status}
+                            disabled={atualizandoId === l.id}
                             onValueChange={(val) => atualizarStatus(l.id, val)}
                           >
                             <SelectTrigger className="h-7 w-[120px] text-[10px]">
-                              <SelectValue />
+                              {atualizandoId === l.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin mx-auto" />
+                              ) : (
+                                <SelectValue />
+                              )}
                             </SelectTrigger>
                             <SelectContent>
                               {STATUS_OPTIONS.map(opt => (
