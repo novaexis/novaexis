@@ -200,6 +200,7 @@ Deno.serve(async (req) => {
         ) {
           await admin.from("profiles").update({ tenant_id }).eq("id", user_id);
         }
+        await audit("user.set_role", "user", user_id, { role, secretaria_slug }, tenant_id ?? null);
         return jsonResponse({ ok: true });
       }
 
@@ -209,6 +210,7 @@ Deno.serve(async (req) => {
         if (tenant_id) q = q.eq("tenant_id", tenant_id);
         const { error } = await q;
         if (error) return jsonResponse({ error: error.message }, 400);
+        await audit("user.remove_role", "user", user_id, { role }, tenant_id ?? null);
         return jsonResponse({ ok: true });
       }
 
@@ -222,6 +224,7 @@ Deno.serve(async (req) => {
           email_confirm: true,
         });
         if (error) return jsonResponse({ error: error.message }, 400);
+        await audit("user.reset_password", "user", user_id, {});
         return jsonResponse({ ok: true });
       }
 
