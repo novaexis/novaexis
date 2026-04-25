@@ -262,3 +262,94 @@ function LandingPage() {
     </div>
   );
 }
+
+function LeadForm() {
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    municipio: "",
+    cargo: "",
+    observacoes: "",
+  });
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.nome || !form.email) {
+      toast.error("Nome e email são obrigatórios");
+      return;
+    }
+    setEnviando(true);
+    try {
+      const { error } = await supabase.from("leads_comerciais").insert({
+        ...form,
+        telefone: form.telefone || null,
+        municipio: form.municipio || null,
+        cargo: form.cargo || null,
+        observacoes: form.observacoes || null,
+        origem: "landing_page",
+      });
+      if (error) throw error;
+      setEnviado(true);
+      toast.success("Recebemos seu contato!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao enviar");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (enviado) {
+    return (
+      <Card className="p-8 text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+        <h3 className="mt-4 text-lg font-semibold">Obrigado!</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Recebemos seu contato. Nossa equipe entra em contato em breve.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6">
+      <h3 className="text-base font-semibold">Fale com a nossa equipe</h3>
+      <form onSubmit={enviar} className="mt-4 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="ln">Nome*</Label>
+            <Input id="ln" required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="le">Email*</Label>
+            <Input id="le" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="lt">Telefone</Label>
+            <Input id="lt" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="lc">Cargo</Label>
+            <Input id="lc" placeholder="Prefeito, Secretário…" value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="mt-1" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="lm">Município</Label>
+          <Input id="lm" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} className="mt-1" />
+        </div>
+        <div>
+          <Label htmlFor="lo">Mensagem</Label>
+          <Textarea id="lo" rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="mt-1" />
+        </div>
+        <Button type="submit" disabled={enviando} className="w-full" size="lg">
+          {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Enviar
+        </Button>
+      </form>
+    </Card>
+  );
+}
