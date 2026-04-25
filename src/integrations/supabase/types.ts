@@ -1394,6 +1394,15 @@ export type Database = {
         Returns: boolean
       }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      log_action: {
+        Args: {
+          p_action: string
+          p_payload?: Json
+          p_severity?: string
+          p_target_id?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       agendamento_status:
