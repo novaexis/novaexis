@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Terminal, Lightbulb, Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertCircle, Terminal, Lightbulb, Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 function LocalizacaoContato({ cargo, municipio }: { cargo: string | null; municipio?: string | null }) {
