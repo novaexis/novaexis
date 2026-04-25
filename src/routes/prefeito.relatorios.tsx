@@ -12,6 +12,7 @@ import {
   Download,
   Eye,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { gerarRelatorioHTML, type RelatorioInput } from "@/lib/relatorio-html";
 
@@ -188,6 +189,26 @@ function RelatoriosPage() {
     }
   }
 
+  async function excluirRelatorio(id: string, path: string | null) {
+    if (!confirm("Excluir este relatório? Esta ação não pode ser desfeita.")) return;
+    try {
+      if (path) {
+        const { error: stErr } = await supabase.storage.from("relatorios").remove([path]);
+        if (stErr) throw stErr;
+      }
+      const { error: dbErr } = await supabase
+        .from("relatorios_executivos")
+        .delete()
+        .eq("id", id);
+      if (dbErr) throw dbErr;
+      setRows((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Relatório excluído");
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir relatório");
+    }
+  }
+
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -271,6 +292,15 @@ function RelatoriosPage() {
                     </Button>
                   </>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => excluirRelatorio(r.id, r.storage_path)}
+                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  aria-label="Excluir relatório"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </li>
           ))}
