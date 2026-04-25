@@ -14,6 +14,7 @@ import { TabRelatorios } from "@/components/secretaria/TabRelatorios";
 import { VisaoGeralPlaceholder } from "@/components/secretaria/VisaoGeralPlaceholder";
 import { VisaoGeralSaude } from "@/components/secretaria/saude/VisaoGeralSaude";
 import { VisaoGeralEducacao } from "@/components/secretaria/educacao/VisaoGeralEducacao";
+import { VisaoGeralInfraestrutura } from "@/components/secretaria/infraestrutura/VisaoGeralInfraestrutura";
 
 export const Route = createFileRoute("/painel/secretaria/$slug")({
   head: ({ params }) => {
@@ -105,6 +106,8 @@ function SecretariaContent({ slug }: { slug: string }) {
           <VisaoGeralSaude kpis={kpis} />
         ) : slug === "educacao" ? (
           <VisaoGeralEducacao kpis={kpis} />
+        ) : slug === "infraestrutura" ? (
+          <VisaoGeralInfraestrutura kpis={kpis} />
         ) : (
           <VisaoGeralPlaceholder kpis={kpis} nome={meta.nome} />
         )
