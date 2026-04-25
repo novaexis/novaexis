@@ -1,11 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoleGuard } from "@/components/RoleGuard";
 import { KPICard } from "@/components/KPICard";
 import { ChatIAGovernador } from "@/components/governador/ChatIAGovernador";
 import { RepasesEstaduais, type RepasseItem } from "@/components/governador/RepasesEstaduais";
-import { Loader2, Heart, GraduationCap, Wallet, ShieldAlert, HardHat, HandHeart } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Loader2, Heart, GraduationCap, Wallet, ShieldAlert, HardHat, HandHeart, Megaphone, Building2 } from "lucide-react";
 
 export const Route = createFileRoute("/governador")({
   head: () => ({
