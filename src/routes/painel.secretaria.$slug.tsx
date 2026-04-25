@@ -129,6 +129,11 @@ function SecretariaContent({ slug }: { slug: string }) {
       relatorios={
         <TabRelatorios slug={slug} nomeSecretaria={meta.nome} canEdit={canEdit} />
       }
+      integracoes={
+        secretaria?.tenant_id ? (
+          <TabIntegracoes tenantId={secretaria.tenant_id} secretariaSlug={slug} />
+        ) : undefined
+      }
     />
   );
 }
