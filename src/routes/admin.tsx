@@ -49,6 +49,9 @@ function AdminPanel() {
           <TabsTrigger value="billing" className="gap-2">
             <CreditCard className="h-4 w-4" /> Billing
           </TabsTrigger>
+          <TabsTrigger value="auditoria" className="gap-2">
+            <Activity className="h-4 w-4" /> Auditoria
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
