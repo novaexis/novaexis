@@ -23,6 +23,8 @@ import { Route as PrefeitoIntegracoesRouteImport } from './routes/prefeito.integ
 import { Route as PrefeitoIaRouteImport } from './routes/prefeito.ia'
 import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
 import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
+import { Route as GovernadorMunicipiosRouteImport } from './routes/governador.municipios'
+import { Route as GovernadorComunicadosRouteImport } from './routes/governador.comunicados'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
@@ -106,6 +108,16 @@ const PrefeitoBenchmarkRoute = PrefeitoBenchmarkRouteImport.update({
   id: '/benchmark',
   path: '/benchmark',
   getParentRoute: () => PrefeitoRoute,
+} as any)
+const GovernadorMunicipiosRoute = GovernadorMunicipiosRouteImport.update({
+  id: '/municipios',
+  path: '/municipios',
+  getParentRoute: () => GovernadorRoute,
+} as any)
+const GovernadorComunicadosRoute = GovernadorComunicadosRouteImport.update({
+  id: '/comunicados',
+  path: '/comunicados',
+  getParentRoute: () => GovernadorRoute,
 } as any)
 const CidadaoServicosRoute = CidadaoServicosRouteImport.update({
   id: '/servicos',
@@ -191,6 +203,8 @@ export interface FileRoutesByFullPath {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/governador/comunicados': typeof GovernadorComunicadosRoute
+  '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
@@ -219,6 +233,8 @@ export interface FileRoutesByTo {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/governador/comunicados': typeof GovernadorComunicadosRoute
+  '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
@@ -249,6 +265,8 @@ export interface FileRoutesById {
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/governador/comunicados': typeof GovernadorComunicadosRoute
+  '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
@@ -280,6 +298,8 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/governador/comunicados'
+    | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
     | '/prefeito/ia'
@@ -308,6 +328,8 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/governador/comunicados'
+    | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
     | '/prefeito/ia'
@@ -337,6 +359,8 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/governador/comunicados'
+    | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
     | '/prefeito/ia'
@@ -465,6 +489,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/prefeito/benchmark'
       preLoaderRoute: typeof PrefeitoBenchmarkRouteImport
       parentRoute: typeof PrefeitoRoute
+    }
+    '/governador/municipios': {
+      id: '/governador/municipios'
+      path: '/municipios'
+      fullPath: '/governador/municipios'
+      preLoaderRoute: typeof GovernadorMunicipiosRouteImport
+      parentRoute: typeof GovernadorRoute
+    }
+    '/governador/comunicados': {
+      id: '/governador/comunicados'
+      path: '/comunicados'
+      fullPath: '/governador/comunicados'
+      preLoaderRoute: typeof GovernadorComunicadosRouteImport
+      parentRoute: typeof GovernadorRoute
     }
     '/cidadao/servicos': {
       id: '/cidadao/servicos'
@@ -618,10 +656,14 @@ const CidadaoRouteWithChildren =
   CidadaoRoute._addFileChildren(CidadaoRouteChildren)
 
 interface GovernadorRouteChildren {
+  GovernadorComunicadosRoute: typeof GovernadorComunicadosRoute
+  GovernadorMunicipiosRoute: typeof GovernadorMunicipiosRoute
   GovernadorSecretariaSlugRoute: typeof GovernadorSecretariaSlugRoute
 }
 
 const GovernadorRouteChildren: GovernadorRouteChildren = {
+  GovernadorComunicadosRoute: GovernadorComunicadosRoute,
+  GovernadorMunicipiosRoute: GovernadorMunicipiosRoute,
   GovernadorSecretariaSlugRoute: GovernadorSecretariaSlugRoute,
 }
 

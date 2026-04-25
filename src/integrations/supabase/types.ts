@@ -1831,6 +1831,7 @@ export type Database = {
       }
       repasses_estaduais: {
         Row: {
+          competencia: string | null
           created_at: string
           descricao: string
           fonte: string
@@ -1844,6 +1845,7 @@ export type Database = {
           valor: number | null
         }
         Insert: {
+          competencia?: string | null
           created_at?: string
           descricao: string
           fonte: string
@@ -1857,6 +1859,7 @@ export type Database = {
           valor?: number | null
         }
         Update: {
+          competencia?: string | null
           created_at?: string
           descricao?: string
           fonte?: string
