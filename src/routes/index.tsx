@@ -49,8 +49,8 @@ function LandingPage() {
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
-            <Link to="/login">
-              <Button size="sm">Solicitar demo</Button>
+            <Link to="/onboarding">
+              <Button size="sm">Comece grátis</Button>
             </Link>
           </div>
         </div>
@@ -79,9 +79,9 @@ function LandingPage() {
             integra dados, IA estratégica e ouvidoria em uma única plataforma.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login">
+            <Link to="/onboarding">
               <Button size="lg" variant="secondary" className="font-semibold">
-                Acessar plataforma <ArrowRight className="ml-1.5 h-4 w-4" />
+                Comece grátis — 14 dias <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
             <a href="#produto">
