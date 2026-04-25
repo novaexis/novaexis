@@ -75,10 +75,11 @@ function SecretariaMunicipalPage() {
 
 function SecretariaContent({ slug }: { slug: string }) {
   const meta = getSecretariaMeta(slug)!;
-  const { roles, primaryRole } = useAuth();
+  const { profile, roles, primaryRole } = useAuth();
   const navigate = useNavigate();
   const { secretaria, kpis, demandas, loading, error, reload, canEdit } =
     useSecretaria(slug);
+  const tenantId = profile?.tenant_id ?? null;
 
   // Guarda extra: se for secretário de outra pasta, redireciona
   const secretarioRole = roles.find((r) => r.role === "secretario");
