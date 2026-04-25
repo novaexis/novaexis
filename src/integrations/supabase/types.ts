@@ -542,6 +542,81 @@ export type Database = {
           },
         ]
       }
+      delegacoes_insights: {
+        Row: {
+          created_at: string
+          delegado_para: string
+          delegado_por: string
+          id: string
+          insight_id: string
+          instrucao: string | null
+          resposta: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delegado_para: string
+          delegado_por: string
+          id?: string
+          insight_id: string
+          instrucao?: string | null
+          resposta?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delegado_para?: string
+          delegado_por?: string
+          id?: string
+          insight_id?: string
+          instrucao?: string | null
+          resposta?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delegacoes_insights_delegado_para_fkey"
+            columns: ["delegado_para"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegacoes_insights_delegado_por_fkey"
+            columns: ["delegado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegacoes_insights_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "insights_cruzados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegacoes_insights_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delegacoes_insights_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demanda_historico: {
         Row: {
           created_at: string
@@ -826,6 +901,145 @@ export type Database = {
         }
         Relationships: []
       }
+      insights_cruzados: {
+        Row: {
+          acao_recomendada: string | null
+          created_at: string
+          dados_suporte: Json
+          delegado_at: string | null
+          delegado_para: string | null
+          descricao: string
+          id: string
+          instrucao_delegacao: string | null
+          lido_pelo_prefeito: boolean
+          prioridade: string
+          secretaria_lider: string | null
+          secretarias: string[]
+          tenant_id: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          acao_recomendada?: string | null
+          created_at?: string
+          dados_suporte?: Json
+          delegado_at?: string | null
+          delegado_para?: string | null
+          descricao: string
+          id?: string
+          instrucao_delegacao?: string | null
+          lido_pelo_prefeito?: boolean
+          prioridade: string
+          secretaria_lider?: string | null
+          secretarias: string[]
+          tenant_id: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          acao_recomendada?: string | null
+          created_at?: string
+          dados_suporte?: Json
+          delegado_at?: string | null
+          delegado_para?: string | null
+          descricao?: string
+          id?: string
+          instrucao_delegacao?: string | null
+          lido_pelo_prefeito?: boolean
+          prioridade?: string
+          secretaria_lider?: string | null
+          secretarias?: string[]
+          tenant_id?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_cruzados_delegado_para_fkey"
+            columns: ["delegado_para"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_cruzados_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_cruzados_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integradores: {
+        Row: {
+          config: Json
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          secretaria_slug: string
+          status: string
+          tenant_id: string
+          tipo: string
+          total_registros_importados: number
+          ultimo_erro: string | null
+          ultimo_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          secretaria_slug: string
+          status?: string
+          tenant_id: string
+          tipo: string
+          total_registros_importados?: number
+          ultimo_erro?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          secretaria_slug?: string
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          total_registros_importados?: number
+          ultimo_erro?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpis: {
         Row: {
           created_at: string
@@ -876,6 +1090,73 @@ export type Database = {
           },
           {
             foreignKeyName: "kpis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mapeamentos_importacao: {
+        Row: {
+          confirmado_at: string | null
+          confirmado_por: string | null
+          created_at: string
+          exemplo_valor: string | null
+          fator_conversao: number
+          id: string
+          indicador_destino: string
+          nome_coluna_origem: string
+          secretaria_slug: string
+          tenant_id: string
+          unidade: string | null
+          vezes_usado: number
+        }
+        Insert: {
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          exemplo_valor?: string | null
+          fator_conversao?: number
+          id?: string
+          indicador_destino: string
+          nome_coluna_origem: string
+          secretaria_slug: string
+          tenant_id: string
+          unidade?: string | null
+          vezes_usado?: number
+        }
+        Update: {
+          confirmado_at?: string | null
+          confirmado_por?: string | null
+          created_at?: string
+          exemplo_valor?: string | null
+          fator_conversao?: number
+          id?: string
+          indicador_destino?: string
+          nome_coluna_origem?: string
+          secretaria_slug?: string
+          tenant_id?: string
+          unidade?: string | null
+          vezes_usado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mapeamentos_importacao_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapeamentos_importacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mapeamentos_importacao_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
@@ -1452,6 +1733,76 @@ export type Database = {
           },
           {
             foreignKeyName: "secretarias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_logs: {
+        Row: {
+          concluido_at: string | null
+          duracao_ms: number | null
+          erro_detalhes: Json | null
+          erro_mensagem: string | null
+          id: string
+          iniciado_at: string
+          integrador_id: string
+          payload_size_kb: number | null
+          registros_ignorados: number
+          registros_processados: number
+          registros_salvos: number
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          concluido_at?: string | null
+          duracao_ms?: number | null
+          erro_detalhes?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          iniciado_at?: string
+          integrador_id: string
+          payload_size_kb?: number | null
+          registros_ignorados?: number
+          registros_processados?: number
+          registros_salvos?: number
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          concluido_at?: string | null
+          duracao_ms?: number | null
+          erro_detalhes?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          iniciado_at?: string
+          integrador_id?: string
+          payload_size_kb?: number | null
+          registros_ignorados?: number
+          registros_processados?: number
+          registros_salvos?: number
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_integrador_id_fkey"
+            columns: ["integrador_id"]
+            isOneToOne: false
+            referencedRelation: "integradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
