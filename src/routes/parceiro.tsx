@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
-import { Loader2, Plus, Handshake, Users, TrendingUp } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Plus, Handshake, Users, TrendingUp, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parceiro")({
@@ -35,12 +42,21 @@ interface Lead {
   created_at: string;
 }
 
+const STATUS_OPTIONS = [
+  { value: "novo", label: "Novo" },
+  { value: "qualificado", label: "Qualificado" },
+  { value: "em_negociacao", label: "Em negociação" },
+  { value: "convertido", label: "Convertido" },
+  { value: "perdido", label: "Perdido" },
+];
+
 function ParceiroPage() {
   const { user, loading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [novo, setNovo] = useState({ nome: "", email: "", telefone: "", municipio: "", cargo: "Prefeito", observacoes: "" });
   const [enviando, setEnviando] = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
   useEffect(() => {
     if (!user) return;
@@ -57,6 +73,21 @@ function ParceiroPage() {
     setCarregando(false);
   }
 
+  async function atualizarStatus(id: string, novoStatus: string) {
+    const { error } = await supabase
+      .from("leads_comerciais")
+      .update({ status: novoStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Erro ao atualizar status: " + error.message);
+      return;
+    }
+
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: novoStatus } : l));
+    toast.success("Status atualizado!");
+  }
+
   async function indicar() {
     if (!novo.nome || !novo.email) {
       toast.error("Nome e email são obrigatórios");
@@ -64,7 +95,6 @@ function ParceiroPage() {
     }
     setEnviando(true);
     try {
-      // pega o reseller_id do profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("reseller_id")
@@ -91,6 +121,11 @@ function ParceiroPage() {
       setEnviando(false);
     }
   }
+
+  const leadsFiltrados = useMemo(() => {
+    if (filtroStatus === "todos") return leads;
+    return leads.filter(l => l.status === filtroStatus);
+  }, [leads, filtroStatus]);
 
   if (loading) {
     return (
@@ -197,27 +232,60 @@ function ParceiroPage() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="text-base font-semibold">Minhas indicações</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">Minhas indicações</h2>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs">
+                    <SelectValue placeholder="Filtrar por status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             {carregando ? (
               <Loader2 className="mx-auto mt-6 h-5 w-5 animate-spin text-primary" />
-            ) : leads.length === 0 ? (
+            ) : leadsFiltrados.length === 0 ? (
               <p className="mt-6 text-center text-sm text-muted-foreground">
-                Nenhuma indicação ainda. Faça a primeira ao lado.
+                Nenhuma indicação encontrada.
               </p>
             ) : (
               <ul className="mt-3 space-y-2">
-                {leads.map((l) => (
+                {leadsFiltrados.map((l) => (
                   <li key={l.id} className="rounded-md border p-3 text-sm">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium">{l.nome}</p>
                         <p className="text-xs text-muted-foreground">
                           {l.cargo} {l.municipio && `· ${l.municipio}`}
                         </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
                       </div>
-                      <StatusBadge status={l.status} />
+                      <div className="flex flex-col items-end gap-2">
+                        <StatusBadge status={l.status} />
+                        <Select
+                          value={l.status}
+                          onValueChange={(val) => atualizarStatus(l.id, val)}
+                        >
+                          <SelectTrigger className="h-7 w-[120px] text-[10px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value} className="text-[10px]">
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
                   </li>
                 ))}
               </ul>
@@ -240,3 +308,4 @@ function StatusBadge({ status }: { status: string }) {
   const m = map[status] ?? { label: status, cls: "" };
   return <Badge variant="outline" className={m.cls}>{m.label}</Badge>;
 }
+
