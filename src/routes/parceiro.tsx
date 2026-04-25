@@ -348,7 +348,6 @@ function ParceiroPage() {
               </div>
             )}
           </Card>
-          </Card>
         </div>
       </main>
     </div>
