@@ -121,7 +121,7 @@ function SettingsPanel() {
     setSaving(s.id);
     const { error } = await supabase
       .from("platform_settings")
-      .update({ valor: s.valor, descricao: s.descricao })
+      .update({ valor: s.valor as never, descricao: s.descricao })
       .eq("id", s.id);
     if (error) toast.error(error.message);
     else toast.success(`"${s.chave}" salvo`);
