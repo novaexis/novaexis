@@ -89,6 +89,8 @@ const FILTROS_PLAT: Array<{ v: "todos" | Plataforma; label: string }> = [
   { v: "instagram", label: "Instagram" },
   { v: "google_maps", label: "Google Maps" },
   { v: "noticias", label: "Notícias" },
+  { v: "youtube", label: "YouTube" },
+  { v: "tiktok", label: "TikTok" },
 ];
 
 function SocialPage() {
@@ -488,5 +490,11 @@ function plataformaIcon(p: Plataforma) {
       return MapPin;
     case "noticias":
       return Newspaper;
+    case "youtube":
+      return Youtube;
+    case "tiktok":
+      return Music2;
+    default:
+      return Hash;
   }
 }
