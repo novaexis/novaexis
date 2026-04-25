@@ -177,6 +177,7 @@ Deno.serve(async (req) => {
         });
         if (rrErr) return jsonResponse({ error: rrErr.message }, 400);
 
+        await audit("user.create", "user", newId, { email, nome, role, secretaria_slug }, tenant_id ?? null);
         return jsonResponse({ ok: true, user_id: newId, password: pw });
       }
 
