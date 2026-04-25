@@ -976,6 +976,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fontes_monitoramento: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          identificador: string
+          nome_exibicao: string | null
+          plataforma: Database["public"]["Enums"]["plataforma_social"]
+          tenant_id: string
+          ultimo_erro: string | null
+          ultimo_sync: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          identificador: string
+          nome_exibicao?: string | null
+          plataforma: Database["public"]["Enums"]["plataforma_social"]
+          tenant_id: string
+          ultimo_erro?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          identificador?: string
+          nome_exibicao?: string | null
+          plataforma?: Database["public"]["Enums"]["plataforma_social"]
+          tenant_id?: string
+          ultimo_erro?: string | null
+          ultimo_sync?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       insights_cruzados: {
         Row: {
           acao_recomendada: string | null
@@ -1302,45 +1341,54 @@ export type Database = {
       mencoes_sociais: {
         Row: {
           alcance: number | null
+          alerta_crise: boolean
           autor: string | null
           coletado_at: string
           conteudo: string
+          conteudo_resumido: string | null
           id: string
           plataforma: Database["public"]["Enums"]["plataforma_social"]
           processado_at: string | null
           score_sentimento: number | null
           secretarias_impactadas: string[] | null
           sentimento: Database["public"]["Enums"]["sentimento"] | null
+          sugestao_resposta: string | null
           temas: string[] | null
           tenant_id: string
           url: string | null
         }
         Insert: {
           alcance?: number | null
+          alerta_crise?: boolean
           autor?: string | null
           coletado_at?: string
           conteudo: string
+          conteudo_resumido?: string | null
           id?: string
           plataforma: Database["public"]["Enums"]["plataforma_social"]
           processado_at?: string | null
           score_sentimento?: number | null
           secretarias_impactadas?: string[] | null
           sentimento?: Database["public"]["Enums"]["sentimento"] | null
+          sugestao_resposta?: string | null
           temas?: string[] | null
           tenant_id: string
           url?: string | null
         }
         Update: {
           alcance?: number | null
+          alerta_crise?: boolean
           autor?: string | null
           coletado_at?: string
           conteudo?: string
+          conteudo_resumido?: string | null
           id?: string
           plataforma?: Database["public"]["Enums"]["plataforma_social"]
           processado_at?: string | null
           score_sentimento?: number | null
           secretarias_impactadas?: string[] | null
           sentimento?: Database["public"]["Enums"]["sentimento"] | null
+          sugestao_resposta?: string | null
           temas?: string[] | null
           tenant_id?: string
           url?: string | null
@@ -1721,6 +1769,7 @@ export type Database = {
       }
       scores_aprovacao: {
         Row: {
+          alerta_crise: boolean
           data: string
           id: string
           negativas: number
@@ -1732,6 +1781,7 @@ export type Database = {
           total_mencoes: number
         }
         Insert: {
+          alerta_crise?: boolean
           data: string
           id?: string
           negativas?: number
@@ -1743,6 +1793,7 @@ export type Database = {
           total_mencoes?: number
         }
         Update: {
+          alerta_crise?: boolean
           data?: string
           id?: string
           negativas?: number
@@ -2270,6 +2321,8 @@ export type Database = {
         | "twitter"
         | "google_maps"
         | "noticias"
+        | "youtube"
+        | "tiktok"
       sentimento: "positivo" | "negativo" | "neutro"
       tenant_plano: "basico" | "completo" | "estado"
       tenant_tipo: "municipio" | "estado"
@@ -2453,6 +2506,8 @@ export const Constants = {
         "twitter",
         "google_maps",
         "noticias",
+        "youtube",
+        "tiktok",
       ],
       sentimento: ["positivo", "negativo", "neutro"],
       tenant_plano: ["basico", "completo", "estado"],
