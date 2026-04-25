@@ -25,6 +25,7 @@ export const Route = createFileRoute("/cidadao/servicos/ouvidoria")({
 });
 
 type TipoOuv = "reclamacao" | "sugestao" | "elogio";
+type DemandaTipo = "servico" | "reclamacao" | "sugestao" | "seguranca" | "elogio";
 
 interface Secretaria { slug: string; nome: string }
 
@@ -80,7 +81,7 @@ function WizardOuvidoriaPage() {
           cidadao_id: user.id,
           secretaria_slug: secretariaSlug,
           protocolo,
-          tipo: "ouvidoria" as never,
+          tipo: tipo as never,
           titulo: tituloFinal,
           descricao: relato.trim(),
           status: "aberta" as const,
