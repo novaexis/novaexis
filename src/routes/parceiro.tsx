@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { AlertCircle, Terminal } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -46,29 +47,57 @@ export const Route = createFileRoute("/parceiro")({
   component: ParceiroPage,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    // Tenta extrair informações de linha/coluna se disponíveis no erro
+    const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/) || errorMsg.match(/line (\d+)/);
+    const lineInfo = lineMatch ? `Linha: ${lineMatch[1]}` : "Localização não identificada";
+
     useEffect(() => {
-      console.error("Erro na rota /parceiro:", error);
+      console.error("Erro diagnóstico /parceiro:", error);
     }, [error]);
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-        <Logo className="mb-6 h-12" />
-        <h2 className="text-xl font-bold text-destructive">Opa! Algo deu errado no portal.</h2>
-        <p className="mt-2 text-sm text-muted-foreground max-w-md">
-          Ocorreu um erro inesperado ao carregar suas informações. Nossa equipe já foi notificada (veja o console para detalhes técnicos).
-        </p>
-        <div className="mt-6 flex gap-3">
-          <Button 
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-          >
-            Tentar novamente
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/">Voltar ao início</Link>
-          </Button>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 text-center dark:bg-slate-950">
+        <div className="w-full max-w-2xl overflow-hidden rounded-xl border bg-white shadow-2xl dark:bg-slate-900">
+          <div className="flex items-center gap-2 border-b bg-destructive/10 px-6 py-4 text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            <h2 className="font-bold">Erro de Execução ou Sintaxe Detectado</h2>
+          </div>
+          
+          <div className="p-6 text-left">
+            <p className="text-sm text-muted-foreground">
+              O sistema encontrou um problema ao processar este arquivo. Use as informações abaixo para corrigir o código:
+            </p>
+            
+            <div className="mt-4 rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-200">
+              <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2 text-slate-400">
+                <span className="flex items-center gap-2">
+                  <Terminal className="h-3.5 w-3.5" />
+                  src/routes/parceiro.tsx
+                </span>
+                <span className="text-amber-400 font-bold">{lineInfo}</span>
+              </div>
+              <pre className="overflow-x-auto whitespace-pre-wrap py-2">
+                {errorMsg}
+              </pre>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  router.invalidate();
+                  reset();
+                }}
+              >
+                Recarregar e Validar
+              </Button>
+              <Button asChild>
+                <Link to="/">Voltar ao Início</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
