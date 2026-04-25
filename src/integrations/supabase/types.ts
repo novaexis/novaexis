@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_saude: {
+        Row: {
+          agendamento_id: string | null
+          created_at: string
+          data_hora: string
+          disponivel: boolean
+          especialidade: string | null
+          id: string
+          tenant_id: string
+          tipo: string
+          unidade_id: string
+        }
+        Insert: {
+          agendamento_id?: string | null
+          created_at?: string
+          data_hora: string
+          disponivel?: boolean
+          especialidade?: string | null
+          id?: string
+          tenant_id: string
+          tipo: string
+          unidade_id: string
+        }
+        Update: {
+          agendamento_id?: string | null
+          created_at?: string
+          data_hora?: string
+          disponivel?: boolean
+          especialidade?: string | null
+          id?: string
+          tenant_id?: string
+          tipo?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_saude_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "agendamentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_saude_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_saude"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agendamentos_saude: {
         Row: {
           cidadao_id: string | null
@@ -137,6 +202,106 @@ export type Database = {
           },
         ]
       }
+      avaliacoes_demandas: {
+        Row: {
+          cidadao_id: string
+          comentario: string | null
+          created_at: string
+          demanda_id: string
+          id: string
+          nota: number
+          tenant_id: string
+        }
+        Insert: {
+          cidadao_id: string
+          comentario?: string | null
+          created_at?: string
+          demanda_id: string
+          id?: string
+          nota: number
+          tenant_id: string
+        }
+        Update: {
+          cidadao_id?: string
+          comentario?: string | null
+          created_at?: string
+          demanda_id?: string
+          id?: string
+          nota?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_demandas_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_demandas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_demandas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beneficios_municipais: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          criterios: string | null
+          descricao: string | null
+          id: string
+          link_formulario: string | null
+          nome: string
+          tenant_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          criterios?: string | null
+          descricao?: string | null
+          id?: string
+          link_formulario?: string | null
+          nome: string
+          tenant_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          criterios?: string | null
+          descricao?: string | null
+          id?: string
+          link_formulario?: string | null
+          nome?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficios_municipais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficios_municipais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandas: {
         Row: {
           anexos: string[] | null
@@ -208,6 +373,51 @@ export type Database = {
           },
           {
             foreignKeyName: "demandas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escolas: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          nome: string
+          tenant_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          tenant_id: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escolas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escolas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
@@ -449,6 +659,63 @@ export type Database = {
           },
         ]
       }
+      repasses_estaduais: {
+        Row: {
+          created_at: string
+          descricao: string
+          fonte: string
+          id: string
+          prazo: string
+          progresso_pct: number | null
+          requisito_pendente: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          fonte: string
+          id?: string
+          prazo: string
+          progresso_pct?: number | null
+          requisito_pendente?: string | null
+          status: string
+          tenant_id: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          fonte?: string
+          id?: string
+          prazo?: string
+          progresso_pct?: number | null
+          requisito_pendente?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repasses_estaduais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repasses_estaduais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scores_aprovacao: {
         Row: {
           data: string
@@ -598,6 +865,175 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tipos_servico: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          prazo_sla_dias: number
+          requer_foto: boolean
+          requer_localizacao: boolean
+          secretaria_slug: string
+          tenant_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          prazo_sla_dias?: number
+          requer_foto?: boolean
+          requer_localizacao?: boolean
+          secretaria_slug: string
+          tenant_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          prazo_sla_dias?: number
+          requer_foto?: boolean
+          requer_localizacao?: boolean
+          secretaria_slug?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_servico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tipos_servico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turmas: {
+        Row: {
+          ano_letivo: number
+          created_at: string
+          escola_id: string
+          id: string
+          serie: string
+          tenant_id: string
+          turno: string
+          vagas_ocupadas: number
+          vagas_total: number
+        }
+        Insert: {
+          ano_letivo?: number
+          created_at?: string
+          escola_id: string
+          id?: string
+          serie: string
+          tenant_id: string
+          turno: string
+          vagas_ocupadas?: number
+          vagas_total?: number
+        }
+        Update: {
+          ano_letivo?: number
+          created_at?: string
+          escola_id?: string
+          id?: string
+          serie?: string
+          tenant_id?: string
+          turno?: string
+          vagas_ocupadas?: number
+          vagas_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turmas_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades_saude: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nome: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome: string
+          tenant_id: string
+          tipo?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
