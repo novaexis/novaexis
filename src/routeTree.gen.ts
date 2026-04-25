@@ -16,6 +16,8 @@ import { Route as GovernadorRouteImport } from './routes/governador'
 import { Route as CidadaoRouteImport } from './routes/cidadao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PrefeitoIndexRouteImport } from './routes/prefeito.index'
+import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
@@ -61,6 +63,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PrefeitoIndexRoute = PrefeitoIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
+const PrefeitoCaptacaoRoute = PrefeitoCaptacaoRouteImport.update({
+  id: '/captacao',
+  path: '/captacao',
+  getParentRoute: () => PrefeitoRoute,
 } as any)
 const CidadaoServicosRoute = CidadaoServicosRouteImport.update({
   id: '/servicos',
@@ -123,12 +135,14 @@ export interface FileRoutesByFullPath {
   '/cidadao': typeof CidadaoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
-  '/prefeito': typeof PrefeitoRoute
+  '/prefeito': typeof PrefeitoRouteWithChildren
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
   '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
@@ -142,12 +156,13 @@ export interface FileRoutesByTo {
   '/cidadao': typeof CidadaoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
-  '/prefeito': typeof PrefeitoRoute
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
   '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
@@ -162,12 +177,14 @@ export interface FileRoutesById {
   '/cidadao': typeof CidadaoRouteWithChildren
   '/governador': typeof GovernadorRouteWithChildren
   '/login': typeof LoginRoute
-  '/prefeito': typeof PrefeitoRoute
+  '/prefeito': typeof PrefeitoRouteWithChildren
   '/secretaria': typeof SecretariaRoute
   '/cidadao/educacao': typeof CidadaoEducacaoRouteWithChildren
   '/cidadao/perfil': typeof CidadaoPerfilRoute
   '/cidadao/saude': typeof CidadaoSaudeRouteWithChildren
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
+  '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
   '/cidadao/saude/agendar': typeof CidadaoSaudeAgendarRoute
@@ -189,6 +206,8 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/captacao'
+    | '/prefeito/'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
     | '/cidadao/saude/agendar'
@@ -202,12 +221,13 @@ export interface FileRouteTypes {
     | '/cidadao'
     | '/governador'
     | '/login'
-    | '/prefeito'
     | '/secretaria'
     | '/cidadao/educacao'
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/captacao'
+    | '/prefeito'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
     | '/cidadao/saude/agendar'
@@ -227,6 +247,8 @@ export interface FileRouteTypes {
     | '/cidadao/perfil'
     | '/cidadao/saude'
     | '/cidadao/servicos'
+    | '/prefeito/captacao'
+    | '/prefeito/'
     | '/cidadao/demanda/$id'
     | '/cidadao/educacao/matricular'
     | '/cidadao/saude/agendar'
@@ -241,7 +263,7 @@ export interface RootRouteChildren {
   CidadaoRoute: typeof CidadaoRouteWithChildren
   GovernadorRoute: typeof GovernadorRouteWithChildren
   LoginRoute: typeof LoginRoute
-  PrefeitoRoute: typeof PrefeitoRoute
+  PrefeitoRoute: typeof PrefeitoRouteWithChildren
   SecretariaRoute: typeof SecretariaRoute
 }
 
@@ -295,6 +317,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/prefeito/': {
+      id: '/prefeito/'
+      path: '/'
+      fullPath: '/prefeito/'
+      preLoaderRoute: typeof PrefeitoIndexRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
+    '/prefeito/captacao': {
+      id: '/prefeito/captacao'
+      path: '/captacao'
+      fullPath: '/prefeito/captacao'
+      preLoaderRoute: typeof PrefeitoCaptacaoRouteImport
+      parentRoute: typeof PrefeitoRoute
     }
     '/cidadao/servicos': {
       id: '/cidadao/servicos'
@@ -438,13 +474,27 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
   GovernadorRouteChildren,
 )
 
+interface PrefeitoRouteChildren {
+  PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
+  PrefeitoIndexRoute: typeof PrefeitoIndexRoute
+}
+
+const PrefeitoRouteChildren: PrefeitoRouteChildren = {
+  PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
+  PrefeitoIndexRoute: PrefeitoIndexRoute,
+}
+
+const PrefeitoRouteWithChildren = PrefeitoRoute._addFileChildren(
+  PrefeitoRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CidadaoRoute: CidadaoRouteWithChildren,
   GovernadorRoute: GovernadorRouteWithChildren,
   LoginRoute: LoginRoute,
-  PrefeitoRoute: PrefeitoRoute,
+  PrefeitoRoute: PrefeitoRouteWithChildren,
   SecretariaRoute: SecretariaRoute,
 }
 export const routeTree = rootRouteImport
