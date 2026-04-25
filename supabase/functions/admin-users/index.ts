@@ -92,6 +92,36 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as Req;
 
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("cf-connecting-ip") ??
+      null;
+    const ua = req.headers.get("user-agent") ?? null;
+
+    async function audit(
+      action: string,
+      resource_type: string,
+      resource_id: string | null,
+      details: Record<string, unknown>,
+      tenant_id: string | null = null,
+    ) {
+      try {
+        await admin.from("audit_logs").insert({
+          actor_id: userData.user!.id,
+          actor_email: userData.user!.email ?? null,
+          action,
+          resource_type,
+          resource_id,
+          tenant_id,
+          details,
+          ip_address: ip,
+          user_agent: ua,
+        });
+      } catch (_) {
+        // Audit não deve quebrar a operação
+      }
+    }
+
     switch (body.action) {
       case "list": {
         // Lista profiles + roles (filtra por tenant/search se vier)
@@ -147,6 +177,7 @@ Deno.serve(async (req) => {
         });
         if (rrErr) return jsonResponse({ error: rrErr.message }, 400);
 
+        await audit("user.create", "user", newId, { email, nome, role, secretaria_slug }, tenant_id ?? null);
         return jsonResponse({ ok: true, user_id: newId, password: pw });
       }
 
@@ -169,6 +200,7 @@ Deno.serve(async (req) => {
         ) {
           await admin.from("profiles").update({ tenant_id }).eq("id", user_id);
         }
+        await audit("user.set_role", "user", user_id, { role, secretaria_slug }, tenant_id ?? null);
         return jsonResponse({ ok: true });
       }
 
@@ -178,6 +210,7 @@ Deno.serve(async (req) => {
         if (tenant_id) q = q.eq("tenant_id", tenant_id);
         const { error } = await q;
         if (error) return jsonResponse({ error: error.message }, 400);
+        await audit("user.remove_role", "user", user_id, { role }, tenant_id ?? null);
         return jsonResponse({ ok: true });
       }
 
@@ -191,6 +224,7 @@ Deno.serve(async (req) => {
           email_confirm: true,
         });
         if (error) return jsonResponse({ error: error.message }, 400);
+        await audit("user.reset_password", "user", user_id, {});
         return jsonResponse({ ok: true });
       }
 

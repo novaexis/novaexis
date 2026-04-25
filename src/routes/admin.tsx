@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Database, Users, Building2, FileBarChart, CreditCard } from "lucide-react";
+import { Loader2, Database, Users, Building2, FileBarChart, CreditCard, Activity } from "lucide-react";
 import { MunicipiosManager } from "@/components/admin/MunicipiosManager";
 import { UsuariosManager } from "@/components/admin/UsuariosManager";
 import { BillingManager } from "@/components/admin/BillingManager";
+import { AuditLogsManager } from "@/components/admin/AuditLogsManager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — NovaeXis" }] }),
@@ -48,6 +49,9 @@ function AdminPanel() {
           <TabsTrigger value="billing" className="gap-2">
             <CreditCard className="h-4 w-4" /> Billing
           </TabsTrigger>
+          <TabsTrigger value="auditoria" className="gap-2">
+            <Activity className="h-4 w-4" /> Auditoria
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
@@ -64,6 +68,10 @@ function AdminPanel() {
 
         <TabsContent value="billing" className="mt-5">
           <BillingManager />
+        </TabsContent>
+
+        <TabsContent value="auditoria" className="mt-5">
+          <AuditLogsManager />
         </TabsContent>
       </Tabs>
     </div>

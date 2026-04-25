@@ -1,0 +1,492 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, RefreshCw, Eye, Activity, Users, Building2, FileText } from "lucide-react";
+import { toast } from "sonner";
+
+type AuditLog = {
+  id: string;
+  created_at: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  tenant_id: string | null;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+};
+
+type Tenant = { id: string; nome: string; slug: string };
+
+type UsageRow = {
+  tenant_id: string;
+  tenant_nome: string;
+  users: number;
+  demandas: number;
+  demandas_abertas: number;
+  agendamentos: number;
+  matriculas: number;
+};
+
+export function AuditLogsManager() {
+  const [tab, setTab] = useState<"logs" | "uso">("logs");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <Button
+          variant={tab === "logs" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("logs")}
+          className="gap-2"
+        >
+          <Activity className="h-4 w-4" /> Audit logs
+        </Button>
+        <Button
+          variant={tab === "uso" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTab("uso")}
+          className="gap-2"
+        >
+          <FileText className="h-4 w-4" /> Métricas por tenant
+        </Button>
+      </div>
+
+      {tab === "logs" ? <LogsTable /> : <UsageTable />}
+    </div>
+  );
+}
+
+function LogsTable() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [tenantFilter, setTenantFilter] = useState<string>("all");
+  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [selected, setSelected] = useState<AuditLog | null>(null);
+
+  useEffect(() => {
+    void loadTenants();
+    void loadLogs();
+  }, []);
+
+  async function loadTenants() {
+    const { data } = await supabase
+      .from("tenants")
+      .select("id, nome, slug")
+      .order("nome");
+    setTenants((data ?? []) as Tenant[]);
+  }
+
+  async function loadLogs() {
+    setLoading(true);
+    try {
+      let q = supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (tenantFilter !== "all") q = q.eq("tenant_id", tenantFilter);
+      if (actionFilter !== "all") q = q.eq("action", actionFilter);
+
+      const { data, error } = await q;
+      if (error) throw error;
+      setLogs((data ?? []) as AuditLog[]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar logs");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadLogs();
+  }, [tenantFilter, actionFilter]);
+
+  const tenantNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of tenants) m.set(t.id, t.nome);
+    return m;
+  }, [tenants]);
+
+  const actions = useMemo(() => {
+    const set = new Set<string>();
+    for (const l of logs) set.add(l.action);
+    return Array.from(set).sort();
+  }, [logs]);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return logs;
+    return logs.filter(
+      (l) =>
+        l.actor_email?.toLowerCase().includes(term) ||
+        l.action.toLowerCase().includes(term) ||
+        l.resource_type.toLowerCase().includes(term) ||
+        l.resource_id?.toLowerCase().includes(term),
+    );
+  }, [logs, search]);
+
+  return (
+    <Card className="p-4">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          placeholder="Buscar por ator, ação ou recurso…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={tenantFilter} onValueChange={setTenantFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Município" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos municípios</SelectItem>
+            {tenants.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={actionFilter} onValueChange={setActionFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Ação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas ações</SelectItem>
+            {actions.map((a) => (
+              <SelectItem key={a} value={a}>
+                {a}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => void loadLogs()} className="gap-2">
+          <RefreshCw className="h-4 w-4" /> Atualizar
+        </Button>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-10 text-center text-sm text-muted-foreground">
+          Nenhum registro de auditoria encontrado.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Quando</TableHead>
+                <TableHead>Ator</TableHead>
+                <TableHead>Ação</TableHead>
+                <TableHead>Recurso</TableHead>
+                <TableHead>Município</TableHead>
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="font-mono text-xs">
+                    {new Date(l.created_at).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {l.actor_email ?? (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {l.action}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    <span className="font-medium">{l.resource_type}</span>
+                    {l.resource_id && (
+                      <span className="ml-1 text-muted-foreground">
+                        #{l.resource_id.slice(0, 8)}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {l.tenant_id
+                      ? (tenantNameById.get(l.tenant_id) ?? "—")
+                      : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelected(l)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do registro</DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <div className="space-y-3 text-sm">
+              <DetailRow label="ID" value={selected.id} mono />
+              <DetailRow
+                label="Quando"
+                value={new Date(selected.created_at).toLocaleString("pt-BR")}
+              />
+              <DetailRow label="Ator" value={selected.actor_email ?? "—"} />
+              <DetailRow label="Ação" value={selected.action} mono />
+              <DetailRow
+                label="Recurso"
+                value={`${selected.resource_type}${selected.resource_id ? ` (${selected.resource_id})` : ""}`}
+                mono
+              />
+              <DetailRow
+                label="Município"
+                value={
+                  selected.tenant_id
+                    ? (tenantNameById.get(selected.tenant_id) ?? selected.tenant_id)
+                    : "—"
+                }
+              />
+              {selected.ip_address && (
+                <DetailRow label="IP" value={selected.ip_address} mono />
+              )}
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
+                  Detalhes
+                </p>
+                <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs">
+                  {JSON.stringify(selected.details ?? {}, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex gap-3">
+      <span className="w-24 shrink-0 text-xs font-medium uppercase text-muted-foreground">
+        {label}
+      </span>
+      <span className={mono ? "break-all font-mono text-xs" : "text-sm"}>{value}</span>
+    </div>
+  );
+}
+
+function UsageTable() {
+  const [rows, setRows] = useState<UsageRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const { data: tenants, error: tErr } = await supabase
+        .from("tenants")
+        .select("id, nome")
+        .order("nome");
+      if (tErr) throw tErr;
+
+      const result: UsageRow[] = [];
+
+      for (const t of tenants ?? []) {
+        const [users, demandas, demandasAb, agend, matr] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("tenant_id", t.id),
+          supabase
+            .from("demandas")
+            .select("id", { count: "exact", head: true })
+            .eq("tenant_id", t.id),
+          supabase
+            .from("demandas")
+            .select("id", { count: "exact", head: true })
+            .eq("tenant_id", t.id)
+            .in("status", ["aberta", "em_andamento"]),
+          supabase
+            .from("agendamentos_saude")
+            .select("id", { count: "exact", head: true })
+            .eq("tenant_id", t.id),
+          supabase
+            .from("matriculas")
+            .select("id", { count: "exact", head: true })
+            .eq("tenant_id", t.id),
+        ]);
+
+        result.push({
+          tenant_id: t.id,
+          tenant_nome: t.nome,
+          users: users.count ?? 0,
+          demandas: demandas.count ?? 0,
+          demandas_abertas: demandasAb.count ?? 0,
+          agendamentos: agend.count ?? 0,
+          matriculas: matr.count ?? 0,
+        });
+      }
+
+      setRows(result);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar métricas");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (acc, r) => ({
+          users: acc.users + r.users,
+          demandas: acc.demandas + r.demandas,
+          demandas_abertas: acc.demandas_abertas + r.demandas_abertas,
+          agendamentos: acc.agendamentos + r.agendamentos,
+          matriculas: acc.matriculas + r.matriculas,
+        }),
+        { users: 0, demandas: 0, demandas_abertas: 0, agendamentos: 0, matriculas: 0 },
+      ),
+    [rows],
+  );
+
+  return (
+    <Card className="p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold">Uso por tenant</h3>
+          <p className="text-xs text-muted-foreground">
+            Volume de usuários, demandas, agendamentos e matrículas por município.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => void load()} className="gap-2">
+          <RefreshCw className="h-4 w-4" /> Atualizar
+        </Button>
+      </div>
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <SummaryCard icon={Building2} label="Tenants" value={rows.length} />
+        <SummaryCard icon={Users} label="Usuários" value={totals.users} />
+        <SummaryCard icon={Activity} label="Demandas" value={totals.demandas} />
+        <SummaryCard icon={Activity} label="Em aberto" value={totals.demandas_abertas} />
+        <SummaryCard icon={FileText} label="Agendamentos" value={totals.agendamentos} />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Município</TableHead>
+                <TableHead className="text-right">Usuários</TableHead>
+                <TableHead className="text-right">Demandas</TableHead>
+                <TableHead className="text-right">Em aberto</TableHead>
+                <TableHead className="text-right">Agendamentos</TableHead>
+                <TableHead className="text-right">Matrículas</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.tenant_id}>
+                  <TableCell className="font-medium">{r.tenant_nome}</TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {r.users}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {r.demandas}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {r.demandas_abertas > 0 ? (
+                      <Badge variant="secondary">{r.demandas_abertas}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">0</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {r.agendamentos}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {r.matriculas}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: number;
+}) {
+  return (
+    <Card className="p-3">
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-primary" />
+        <p className="text-xs uppercase text-muted-foreground">{label}</p>
+      </div>
+      <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">{value}</p>
+    </Card>
+  );
+}
