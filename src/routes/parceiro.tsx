@@ -346,15 +346,8 @@ function ParceiroPage() {
                   </div>
                 )}
               </div>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {leadsFiltrados.map((l) => (
-                  <li key={l.id} className="rounded-md border p-3 text-sm">
-...
-                  </li>
-                ))}
-              </ul>
             )}
+          </Card>
           </Card>
         </div>
       </main>
