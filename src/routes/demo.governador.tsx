@@ -24,16 +24,34 @@ interface Snap {
 
 function DemoGovernadorPage() {
   const [data, setData] = useState<Snap | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL ?? ""}/functions/v1/demo-snapshot?tipo=governador`;
-      const r = await fetch(url, {
-        headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "" },
-      });
-      if (r.ok) setData(await r.json());
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL ?? ""}/functions/v1/demo-snapshot?tipo=governador`;
+        const r = await fetch(url, {
+          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "" },
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j?.error ?? "Falha ao carregar dados da demo");
+        setData(j);
+      } catch (e) {
+        setErro(e instanceof Error ? e.message : "Erro ao carregar demo");
+      }
     })();
   }, []);
+
+  if (erro) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Card className="border-amber-500/40 bg-amber-50/40 p-6 text-sm dark:bg-amber-950/20">
+          <p className="font-semibold text-amber-800">Painel do Governador indisponível</p>
+          <p className="mt-1 text-muted-foreground">{erro}</p>
+        </Card>
+      </div>
+    );
+  }
 
   if (!data) {
     return (

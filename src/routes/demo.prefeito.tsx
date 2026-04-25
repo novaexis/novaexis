@@ -33,22 +33,13 @@ function DemoPrefeitoPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data: snap, error } = await supabase.functions.invoke("demo-snapshot", {
-          body: null,
-          method: "GET",
-        } as never);
-        // fallback usando fetch direto
-        if (error || !snap) {
-          const url = `${import.meta.env.VITE_SUPABASE_URL ?? ""}/functions/v1/demo-snapshot?tipo=prefeito`;
-          const r = await fetch(url, {
-            headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "" },
-          });
-          const j = await r.json();
-          if (!r.ok) throw new Error(j?.error ?? "Falha");
-          setData(j);
-        } else {
-          setData(snap as Snapshot);
-        }
+        const url = `${import.meta.env.VITE_SUPABASE_URL ?? ""}/functions/v1/demo-snapshot?tipo=prefeito`;
+        const r = await fetch(url, {
+          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "" },
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j?.error ?? "Falha ao carregar dados da demo");
+        setData(j);
       } catch (e) {
         setErro(e instanceof Error ? e.message : "Erro ao carregar demo");
       }
