@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Database, Users, Building2, FileBarChart } from "lucide-react";
 import { MunicipiosManager } from "@/components/admin/MunicipiosManager";
+import { UsuariosManager } from "@/components/admin/UsuariosManager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — NovaeXis" }] }),
