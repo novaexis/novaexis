@@ -19,6 +19,7 @@ interface SecretariaShellProps {
   demandas: ReactNode;
   indicadores: ReactNode;
   relatorios: ReactNode;
+  integracoes?: ReactNode;
   acoes?: ReactNode;
 }
 
