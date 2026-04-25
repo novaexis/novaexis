@@ -58,10 +58,19 @@ function formatValor(valor: number, unidade: string | null): string {
   return valor.toFixed(1);
 }
 
+interface ComunicadoBreve {
+  id: string;
+  titulo: string;
+  enviado_at: string;
+  tenants_destinatarios: string[];
+  lido_por: Record<string, string>;
+}
+
 function GovernadorDashboard() {
   const navigate = useNavigate();
   const [kpis, setKpis] = useState<KPIRow[]>([]);
   const [repasses, setRepasses] = useState<RepasseItem[]>([]);
+  const [comunicados, setComunicados] = useState<ComunicadoBreve[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,7 +90,7 @@ function GovernadorDashboard() {
       return;
     }
 
-    const [{ data: kpisData }, { data: repassesData }] = await Promise.all([
+    const [{ data: kpisData }, { data: repassesData }, { data: comunicadosData }] = await Promise.all([
       supabase
         .from("kpis")
         .select("secretaria_slug, indicador, valor, unidade, variacao_pct, status, referencia_data")
@@ -93,10 +102,17 @@ function GovernadorDashboard() {
         .select("id, fonte, descricao, valor, prazo, status, requisito_pendente, progresso_pct")
         .eq("tenant_id", tenantId)
         .order("prazo", { ascending: true }),
+      supabase
+        .from("comunicados_governador")
+        .select("id, titulo, enviado_at, tenants_destinatarios, lido_por")
+        .eq("tenant_estadual_id", tenantId)
+        .order("enviado_at", { ascending: false })
+        .limit(2),
     ]);
 
     setKpis((kpisData ?? []) as KPIRow[]);
     setRepasses((repassesData ?? []) as RepasseItem[]);
+    setComunicados((comunicadosData ?? []) as ComunicadoBreve[]);
     setLoading(false);
   }
 
