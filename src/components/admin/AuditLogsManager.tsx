@@ -32,14 +32,15 @@ type AuditLog = {
   id: string;
   created_at: string;
   actor_id: string | null;
-  actor_email: string | null;
   action: string;
-  resource_type: string;
-  resource_id: string | null;
-  tenant_id: string | null;
-  details: Record<string, unknown> | null;
+  severity: string | null;
+  payload: Record<string, unknown> | null;
   ip_address: string | null;
   user_agent: string | null;
+  target_id: string | null;
+  profiles?: {
+    email: string | null;
+  } | null;
 };
 
 type Tenant = { id: string; nome: string; slug: string };
@@ -85,41 +86,40 @@ export function AuditLogsManager() {
 
 function LogsTable() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [tenantFilter, setTenantFilter] = useState<string>("all");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [selected, setSelected] = useState<AuditLog | null>(null);
 
   useEffect(() => {
-    void loadTenants();
     void loadLogs();
   }, []);
-
-  async function loadTenants() {
-    const { data } = await supabase
-      .from("tenants")
-      .select("id, nome, slug")
-      .order("nome");
-    setTenants((data ?? []) as Tenant[]);
-  }
 
   async function loadLogs() {
     setLoading(true);
     try {
       let q = supabase
-        .from("audit_logs")
-        .select("*")
+        .from("audit_logs" as any)
+        .select(`
+          *,
+          profiles:actor_id (
+            email
+          )
+        `)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(200);
 
-      if (tenantFilter !== "all") q = q.eq("tenant_id", tenantFilter);
+      if (severityFilter !== "all") q = q.eq("severity", severityFilter);
       if (actionFilter !== "all") q = q.eq("action", actionFilter);
+      if (dateFrom) q = q.gte("created_at", `${dateFrom}T00:00:00`);
+      if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
 
       const { data, error } = await q;
       if (error) throw error;
-      setLogs((data ?? []) as AuditLog[]);
+      setLogs((data ?? []) as unknown as AuditLog[]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar logs");
     } finally {
@@ -128,14 +128,11 @@ function LogsTable() {
   }
 
   useEffect(() => {
-    void loadLogs();
-  }, [tenantFilter, actionFilter]);
-
-  const tenantNameById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const t of tenants) m.set(t.id, t.nome);
-    return m;
-  }, [tenants]);
+    const timer = setTimeout(() => {
+      void loadLogs();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [severityFilter, actionFilter, dateFrom, dateTo]);
 
   const actions = useMemo(() => {
     const set = new Set<string>();
@@ -148,10 +145,10 @@ function LogsTable() {
     if (!term) return logs;
     return logs.filter(
       (l) =>
-        l.actor_email?.toLowerCase().includes(term) ||
+        l.profiles?.email?.toLowerCase().includes(term) ||
         l.action.toLowerCase().includes(term) ||
-        l.resource_type.toLowerCase().includes(term) ||
-        l.resource_id?.toLowerCase().includes(term),
+        l.severity?.toLowerCase().includes(term) ||
+        l.target_id?.toLowerCase().includes(term),
     );
   }, [logs, search]);
 
@@ -159,30 +156,28 @@ function LogsTable() {
     <Card className="p-4">
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Buscar por ator, ação ou recurso…"
+          placeholder="Buscar ator, ação ou alvo…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
+          className="max-w-[200px]"
         />
-        <Select value={tenantFilter} onValueChange={setTenantFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Município" />
+        <Select value={severityFilter} onValueChange={setSeverityFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Severidade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos municípios</SelectItem>
-            {tenants.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.nome}
-              </SelectItem>
-            ))}
+            <SelectItem value="all">Severidade: Todas</SelectItem>
+            <SelectItem value="info">Info</SelectItem>
+            <SelectItem value="warning">Warning</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
           </SelectContent>
         </Select>
         <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Ação" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas ações</SelectItem>
+            <SelectItem value="all">Ação: Todas</SelectItem>
             {actions.map((a) => (
               <SelectItem key={a} value={a}>
                 {a}
@@ -190,11 +185,26 @@ function LogsTable() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-[140px] text-xs"
+          />
+          <span className="text-muted-foreground">até</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-[140px] text-xs"
+          />
+        </div>
         <Button variant="outline" size="sm" onClick={() => void loadLogs()} className="gap-2">
           <RefreshCw className="h-4 w-4" /> Atualizar
         </Button>
         <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
+          {filtered.length} registros
         </span>
       </div>
 
@@ -204,7 +214,7 @@ function LogsTable() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-muted-foreground">
-          Nenhum registro de auditoria encontrado.
+          Nenhum registro de auditoria encontrado com os filtros aplicados.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -213,40 +223,39 @@ function LogsTable() {
               <TableRow>
                 <TableHead>Quando</TableHead>
                 <TableHead>Ator</TableHead>
+                <TableHead>Severidade</TableHead>
                 <TableHead>Ação</TableHead>
-                <TableHead>Recurso</TableHead>
-                <TableHead>Município</TableHead>
+                <TableHead>Alvo</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="font-mono text-[10px] whitespace-nowrap">
                     {new Date(l.created_at).toLocaleString("pt-BR")}
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {l.actor_email ?? (
+                  <TableCell className="text-sm max-w-[150px] truncate">
+                    {l.profiles?.email ?? (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {l.action}
+                    <Badge 
+                      variant={
+                        l.severity === "critical" ? "destructive" : 
+                        l.severity === "warning" ? "secondary" : "outline"
+                      }
+                      className="text-[10px] uppercase"
+                    >
+                      {l.severity || "info"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs">
-                    <span className="font-medium">{l.resource_type}</span>
-                    {l.resource_id && (
-                      <span className="ml-1 text-muted-foreground">
-                        #{l.resource_id.slice(0, 8)}
-                      </span>
-                    )}
+                  <TableCell>
+                    <span className="font-mono text-xs">{l.action}</span>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {l.tenant_id
-                      ? (tenantNameById.get(l.tenant_id) ?? "—")
-                      : "—"}
+                  <TableCell className="text-xs font-mono">
+                    {l.target_id ? `#${l.target_id.slice(0, 8)}` : "—"}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -276,30 +285,22 @@ function LogsTable() {
                 label="Quando"
                 value={new Date(selected.created_at).toLocaleString("pt-BR")}
               />
-              <DetailRow label="Ator" value={selected.actor_email ?? "—"} />
+              <DetailRow label="Ator" value={selected.profiles?.email ?? "—"} />
               <DetailRow label="Ação" value={selected.action} mono />
-              <DetailRow
-                label="Recurso"
-                value={`${selected.resource_type}${selected.resource_id ? ` (${selected.resource_id})` : ""}`}
-                mono
-              />
-              <DetailRow
-                label="Município"
-                value={
-                  selected.tenant_id
-                    ? (tenantNameById.get(selected.tenant_id) ?? selected.tenant_id)
-                    : "—"
-                }
-              />
+              <DetailRow label="Severidade" value={selected.severity || "info"} />
+              <DetailRow label="Alvo" value={selected.target_id || "—"} mono />
               {selected.ip_address && (
                 <DetailRow label="IP" value={selected.ip_address} mono />
               )}
+              {selected.user_agent && (
+                <DetailRow label="User Agent" value={selected.user_agent} />
+              )}
               <div>
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
-                  Detalhes
+                  Payload / Detalhes
                 </p>
                 <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs">
-                  {JSON.stringify(selected.details ?? {}, null, 2)}
+                  {JSON.stringify(selected.payload ?? {}, null, 2)}
                 </pre>
               </div>
             </div>
