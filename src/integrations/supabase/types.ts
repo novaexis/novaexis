@@ -1146,7 +1146,13 @@ export type Database = {
         | "realizado"
         | "cancelado"
         | "faltou"
-      alerta_status: "disponivel" | "em_andamento" | "perdido" | "captado"
+      alerta_status:
+        | "disponivel"
+        | "em_andamento"
+        | "perdido"
+        | "captado"
+        | "em_risco"
+        | "pendente"
       alerta_tipo:
         | "recurso_federal"
         | "recurso_estadual"
@@ -1318,7 +1324,14 @@ export const Constants = {
         "cancelado",
         "faltou",
       ],
-      alerta_status: ["disponivel", "em_andamento", "perdido", "captado"],
+      alerta_status: [
+        "disponivel",
+        "em_andamento",
+        "perdido",
+        "captado",
+        "em_risco",
+        "pendente",
+      ],
       alerta_tipo: [
         "recurso_federal",
         "recurso_estadual",
