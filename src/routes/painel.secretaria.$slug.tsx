@@ -13,7 +13,7 @@ import { TabIndicadores } from "@/components/secretaria/TabIndicadores";
 import { TabRelatorios } from "@/components/secretaria/TabRelatorios";
 import { VisaoGeralPlaceholder } from "@/components/secretaria/VisaoGeralPlaceholder";
 
-export const Route = createFileRoute("/prefeito/secretaria/$slug")({
+export const Route = createFileRoute("/painel/secretaria/$slug")({
   head: ({ params }) => {
     const meta = getSecretariaMeta(params.slug);
     const nome = meta?.nome ?? params.slug;
