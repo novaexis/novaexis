@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Terminal, Lightbulb, Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertCircle, Terminal, Lightbulb, Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight, Copy, ChevronDown, ChevronUp, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 function LocalizacaoContato({ cargo, municipio }: { cargo: string | null; municipio?: string | null }) {
@@ -79,6 +79,28 @@ export const Route = createFileRoute("/parceiro")({
       });
     };
 
+    const generateTicketSummary = () => {
+      const errorId = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const stackSnippet = errorStack ? errorStack.split("\n").slice(0, 5).join("\n") : "N/A";
+      const summary = `
+🎫 TICKET DE ERRO [#${errorId}]
+---------------------------
+ARQUIVO: src/routes/parceiro.tsx
+LOCAL: ${lineInfo}
+MENSAGEM: ${errorMsg}
+
+TRECHO DO STACK:
+${stackSnippet}
+---------------------------
+URL: ${window.location.href}
+DATA: ${new Date().toLocaleString()}
+      `.trim();
+      
+      navigator.clipboard.writeText(summary).then(() => {
+        toast.success(`Resumo do ticket [#${errorId}] copiado!`);
+      });
+    };
+
     useEffect(() => {
       console.error("Erro diagnóstico /parceiro:", error);
     }, [error]);
@@ -91,10 +113,16 @@ export const Route = createFileRoute("/parceiro")({
               <AlertCircle className="h-5 w-5" />
               <span>Erro Detectado</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={copyError} className="h-8 px-2 text-destructive hover:bg-destructive/20">
-              <Copy className="mr-2 h-3.5 w-3.5" />
-              Copiar Erro
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={generateTicketSummary} className="h-8 px-2 text-destructive hover:bg-destructive/20">
+                <Ticket className="mr-2 h-3.5 w-3.5" />
+                Gerar Ticket
+              </Button>
+              <Button variant="ghost" size="sm" onClick={copyError} className="h-8 px-2 text-destructive hover:bg-destructive/20">
+                <Copy className="mr-2 h-3.5 w-3.5" />
+                Copiar
+              </Button>
+            </div>
           </div>
           
           <div className="p-6">
@@ -125,7 +153,7 @@ export const Route = createFileRoute("/parceiro")({
                     onClick={() => setShowStack(!showStack)}
                     className="flex w-full items-center justify-between text-slate-500 hover:text-slate-300"
                   >
-                    <span>Stack Trace</span>
+                    <span>Stack Trace Completo</span>
                     {showStack ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
                   {showStack && (
