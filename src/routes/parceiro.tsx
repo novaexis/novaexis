@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Handshake, Users, TrendingUp, Filter } from "lucide-react";
+import { Loader2, Plus, Handshake, Users, TrendingUp, Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parceiro")({
@@ -57,6 +57,9 @@ function ParceiroPage() {
   const [novo, setNovo] = useState({ nome: "", email: "", telefone: "", municipio: "", cargo: "Prefeito", observacoes: "" });
   const [enviando, setEnviando] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const itensPorPagina = 5;
 
   useEffect(() => {
     if (!user) return;
@@ -123,9 +126,25 @@ function ParceiroPage() {
   }
 
   const leadsFiltrados = useMemo(() => {
-    if (filtroStatus === "todos") return leads;
-    return leads.filter(l => l.status === filtroStatus);
-  }, [leads, filtroStatus]);
+    return leads.filter(l => {
+      const matchStatus = filtroStatus === "todos" || l.status === filtroStatus;
+      const matchBusca = !busca || 
+        l.nome.toLowerCase().includes(busca.toLowerCase()) || 
+        (l.municipio?.toLowerCase().includes(busca.toLowerCase()) ?? false);
+      return matchStatus && matchBusca;
+    });
+  }, [leads, filtroStatus, busca]);
+
+  const leadsPaginados = useMemo(() => {
+    const inicio = (pagina - 1) * itensPorPagina;
+    return leadsFiltrados.slice(inicio, inicio + itensPorPagina);
+  }, [leadsFiltrados, pagina]);
+
+  const totalPaginas = Math.ceil(leadsFiltrados.length / itensPorPagina);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroStatus, busca]);
 
   if (loading) {
     return (
@@ -234,11 +253,19 @@ function ParceiroPage() {
           <Card className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold">Minhas indicações</h2>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar..."
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    className="h-8 w-[120px] pl-8 text-xs sm:w-[180px]"
+                  />
+                </div>
                 <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                  <SelectTrigger className="h-8 w-[140px] text-xs">
-                    <SelectValue placeholder="Filtrar por status" />
+                  <SelectTrigger className="h-8 w-[110px] text-xs">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
@@ -256,36 +283,74 @@ function ParceiroPage() {
                 Nenhuma indicação encontrada.
               </p>
             ) : (
+              <div className="mt-3 space-y-4">
+                <ul className="space-y-2">
+                  {leadsPaginados.map((l) => (
+                    <li key={l.id} className="rounded-md border p-3 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="font-medium">{l.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {l.cargo} {l.municipio && `· ${l.municipio}`}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <StatusBadge status={l.status} />
+                          <Select
+                            value={l.status}
+                            onValueChange={(val) => atualizarStatus(l.id, val)}
+                          >
+                            <SelectTrigger className="h-7 w-[120px] text-[10px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value} className="text-[10px]">
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <p className="text-[10px] text-muted-foreground">
+                      Página {pagina} de {totalPaginas}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setPagina(p => Math.max(1, p - 1))}
+                        disabled={pagina === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                        disabled={pagina === totalPaginas}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
               <ul className="mt-3 space-y-2">
                 {leadsFiltrados.map((l) => (
                   <li key={l.id} className="rounded-md border p-3 text-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="font-medium">{l.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {l.cargo} {l.municipio && `· ${l.municipio}`}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">{l.email}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <StatusBadge status={l.status} />
-                        <Select
-                          value={l.status}
-                          onValueChange={(val) => atualizarStatus(l.id, val)}
-                        >
-                          <SelectTrigger className="h-7 w-[120px] text-[10px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STATUS_OPTIONS.map(opt => (
-                              <SelectItem key={opt.value} value={opt.value} className="text-[10px]">
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+...
                   </li>
                 ))}
               </ul>
