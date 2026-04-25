@@ -341,6 +341,42 @@ export type Database = {
           },
         ]
       }
+      benchmark_cache: {
+        Row: {
+          areas_criticas: Json
+          destaques_positivos: Json
+          gerado_at: string
+          id: string
+          municipios_comparaveis: Json
+          percentis: Json
+          radar_data: Json
+          tenant_id: string
+          valido_ate: string
+        }
+        Insert: {
+          areas_criticas?: Json
+          destaques_positivos?: Json
+          gerado_at?: string
+          id?: string
+          municipios_comparaveis?: Json
+          percentis?: Json
+          radar_data?: Json
+          tenant_id: string
+          valido_ate?: string
+        }
+        Update: {
+          areas_criticas?: Json
+          destaques_positivos?: Json
+          gerado_at?: string
+          id?: string
+          municipios_comparaveis?: Json
+          percentis?: Json
+          radar_data?: Json
+          tenant_id?: string
+          valido_ate?: string
+        }
+        Relationships: []
+      }
       beneficios_municipais: {
         Row: {
           ativo: boolean
@@ -541,6 +577,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversas_ia: {
+        Row: {
+          avaliacao: number | null
+          created_at: string
+          id: string
+          pergunta: string
+          resposta: string
+          secretaria_slug: string | null
+          tenant_id: string
+          tipo: string
+          tokens_usados: number | null
+          usuario_id: string
+        }
+        Insert: {
+          avaliacao?: number | null
+          created_at?: string
+          id?: string
+          pergunta: string
+          resposta: string
+          secretaria_slug?: string | null
+          tenant_id: string
+          tipo?: string
+          tokens_usados?: number | null
+          usuario_id: string
+        }
+        Update: {
+          avaliacao?: number | null
+          created_at?: string
+          id?: string
+          pergunta?: string
+          resposta?: string
+          secretaria_slug?: string | null
+          tenant_id?: string
+          tipo?: string
+          tokens_usados?: number | null
+          usuario_id?: string
+        }
+        Relationships: []
       }
       delegacoes_insights: {
         Row: {
