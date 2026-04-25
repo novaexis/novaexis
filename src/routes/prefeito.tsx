@@ -28,11 +28,12 @@ function PrefeitoShellWithData() {
 
   useEffect(() => {
     if (!profile?.tenant_id) return;
+    const tid = profile.tenant_id;
     void (async () => {
       const { data } = await supabase
         .from("tenants")
         .select("nome")
-        .eq("id", profile.tenant_id)
+        .eq("id", tid)
         .maybeSingle();
       if (data) setTenantNome(data.nome);
     })();
