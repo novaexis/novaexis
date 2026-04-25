@@ -60,6 +60,13 @@ export type Database = {
             foreignKeyName: "agenda_saude_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "agenda_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -120,6 +127,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "agendamentos_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "agendamentos_saude_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -190,6 +204,13 @@ export type Database = {
             foreignKeyName: "alertas_prazos_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "alertas_prazos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -231,6 +252,13 @@ export type Database = {
           unidade?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "atendimentos_cras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "atendimentos_cras_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -329,6 +357,13 @@ export type Database = {
             foreignKeyName: "avaliacoes_demandas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_demandas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -409,6 +444,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "beneficios_municipais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "beneficios_municipais_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -503,12 +545,87 @@ export type Database = {
             foreignKeyName: "campanhas_vacinacao_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "campanhas_vacinacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "campanhas_vacinacao_tenant_id_fkey"
             columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comunicados_governador: {
+        Row: {
+          corpo: string
+          destinatarios: string
+          enviado_at: string
+          enviado_por: string
+          filtro_destinatarios: Json | null
+          id: string
+          lido_por: Json
+          tenant_estadual_id: string
+          tenants_destinatarios: string[]
+          titulo: string
+        }
+        Insert: {
+          corpo: string
+          destinatarios?: string
+          enviado_at?: string
+          enviado_por: string
+          filtro_destinatarios?: Json | null
+          id?: string
+          lido_por?: Json
+          tenant_estadual_id: string
+          tenants_destinatarios?: string[]
+          titulo: string
+        }
+        Update: {
+          corpo?: string
+          destinatarios?: string
+          enviado_at?: string
+          enviado_por?: string
+          filtro_destinatarios?: Json | null
+          id?: string
+          lido_por?: Json
+          tenant_estadual_id?: string
+          tenants_destinatarios?: string[]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicados_governador_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_governador_tenant_estadual_id_fkey"
+            columns: ["tenant_estadual_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "comunicados_governador_tenant_estadual_id_fkey"
+            columns: ["tenant_estadual_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicados_governador_tenant_estadual_id_fkey"
+            columns: ["tenant_estadual_id"]
             isOneToOne: false
             referencedRelation: "tenants_public"
             referencedColumns: ["id"]
@@ -562,6 +679,13 @@ export type Database = {
           valor_total?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contratos_obras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "contratos_obras_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -680,6 +804,13 @@ export type Database = {
             foreignKeyName: "delegacoes_insights_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "delegacoes_insights_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -730,6 +861,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "demandas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demanda_historico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "demanda_historico_tenant_id_fkey"
@@ -820,6 +958,13 @@ export type Database = {
             foreignKeyName: "demandas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "demandas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -861,6 +1006,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "escolas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "escolas_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -927,6 +1079,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "familias_acompanhamento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "familias_acompanhamento_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1079,6 +1238,13 @@ export type Database = {
             foreignKeyName: "insights_cruzados_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "insights_cruzados_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1142,6 +1308,13 @@ export type Database = {
             foreignKeyName: "integradores_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "integradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1160,6 +1333,7 @@ export type Database = {
           fonte: string | null
           id: string
           indicador: string
+          meta: number | null
           referencia_data: string
           secretaria_slug: string
           status: Database["public"]["Enums"]["kpi_status"]
@@ -1173,6 +1347,7 @@ export type Database = {
           fonte?: string | null
           id?: string
           indicador: string
+          meta?: number | null
           referencia_data: string
           secretaria_slug: string
           status?: Database["public"]["Enums"]["kpi_status"]
@@ -1186,6 +1361,7 @@ export type Database = {
           fonte?: string | null
           id?: string
           indicador?: string
+          meta?: number | null
           referencia_data?: string
           secretaria_slug?: string
           status?: Database["public"]["Enums"]["kpi_status"]
@@ -1195,6 +1371,13 @@ export type Database = {
           variacao_pct?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "kpis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "kpis_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1266,6 +1449,13 @@ export type Database = {
             foreignKeyName: "mapeamentos_importacao_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "mapeamentos_importacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1322,6 +1512,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "matriculas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "matriculas_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1398,6 +1595,13 @@ export type Database = {
             foreignKeyName: "mencoes_sociais_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "mencoes_sociais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1448,6 +1652,13 @@ export type Database = {
           tipo?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ocorrencias_seguranca_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "ocorrencias_seguranca_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1563,6 +1774,13 @@ export type Database = {
             foreignKeyName: "profiles_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1656,6 +1874,13 @@ export type Database = {
             foreignKeyName: "repasses_estaduais_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "repasses_estaduais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1700,6 +1925,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "repasses_municipais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "repasses_municipais_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1809,6 +2041,13 @@ export type Database = {
             foreignKeyName: "scores_aprovacao_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "scores_aprovacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1850,6 +2089,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "secretarias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "secretarias_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1919,6 +2165,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integradores"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "sync_logs_tenant_id_fkey"
@@ -2035,6 +2288,13 @@ export type Database = {
             foreignKeyName: "tipos_servico_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tipos_servico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2088,6 +2348,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "escolas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turmas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "turmas_tenant_id_fkey"
@@ -2147,6 +2414,13 @@ export type Database = {
             foreignKeyName: "unidades_saude_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "unidades_saude_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2189,6 +2463,13 @@ export type Database = {
             foreignKeyName: "user_roles_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "kpis_municipios_aderentes"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "user_roles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2203,6 +2484,22 @@ export type Database = {
       }
     }
     Views: {
+      kpis_municipios_aderentes: {
+        Row: {
+          idhm: number | null
+          indicador: string | null
+          municipio: string | null
+          populacao: number | null
+          referencia_data: string | null
+          secretaria_slug: string | null
+          status: Database["public"]["Enums"]["kpi_status"] | null
+          tenant_id: string | null
+          unidade: string | null
+          valor: number | null
+          variacao_pct: number | null
+        }
+        Relationships: []
+      }
       tenants_public: {
         Row: {
           ativo: boolean | null
