@@ -27,6 +27,7 @@ import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
 import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
 import { Route as CidadaoEducacaoRouteImport } from './routes/cidadao.educacao'
+import { Route as PrefeitoSocialConfigurarRouteImport } from './routes/prefeito.social.configurar'
 import { Route as PainelSecretariaSlugRouteImport } from './routes/painel.secretaria.$slug'
 import { Route as GovernadorSecretariaSlugRouteImport } from './routes/governador.secretaria.$slug'
 import { Route as CidadaoServicosSolicitarRouteImport } from './routes/cidadao.servicos.solicitar'
@@ -126,6 +127,12 @@ const CidadaoEducacaoRoute = CidadaoEducacaoRouteImport.update({
   path: '/educacao',
   getParentRoute: () => CidadaoRoute,
 } as any)
+const PrefeitoSocialConfigurarRoute =
+  PrefeitoSocialConfigurarRouteImport.update({
+    id: '/configurar',
+    path: '/configurar',
+    getParentRoute: () => PrefeitoSocialRoute,
+  } as any)
 const PainelSecretariaSlugRoute = PainelSecretariaSlugRouteImport.update({
   id: '/painel/secretaria/$slug',
   path: '/painel/secretaria/$slug',
@@ -189,7 +196,7 @@ export interface FileRoutesByFullPath {
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
-  '/prefeito/social': typeof PrefeitoSocialRoute
+  '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRoutesByTo {
@@ -216,7 +224,7 @@ export interface FileRoutesByTo {
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
-  '/prefeito/social': typeof PrefeitoSocialRoute
+  '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -225,6 +233,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRoutesById {
@@ -245,7 +254,7 @@ export interface FileRoutesById {
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
-  '/prefeito/social': typeof PrefeitoSocialRoute
+  '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito/': typeof PrefeitoIndexRoute
   '/cidadao/demanda/$id': typeof CidadaoDemandaIdRoute
   '/cidadao/educacao/matricular': typeof CidadaoEducacaoMatricularRoute
@@ -254,6 +263,7 @@ export interface FileRoutesById {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRouteTypes {
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   id:
     | '__root__'
@@ -339,6 +351,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   fileRoutesById: FileRoutesById
 }
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CidadaoEducacaoRouteImport
       parentRoute: typeof CidadaoRoute
     }
+    '/prefeito/social/configurar': {
+      id: '/prefeito/social/configurar'
+      path: '/configurar'
+      fullPath: '/prefeito/social/configurar'
+      preLoaderRoute: typeof PrefeitoSocialConfigurarRouteImport
+      parentRoute: typeof PrefeitoSocialRoute
+    }
     '/painel/secretaria/$slug': {
       id: '/painel/secretaria/$slug'
       path: '/painel/secretaria/$slug'
@@ -609,13 +629,25 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
   GovernadorRouteChildren,
 )
 
+interface PrefeitoSocialRouteChildren {
+  PrefeitoSocialConfigurarRoute: typeof PrefeitoSocialConfigurarRoute
+}
+
+const PrefeitoSocialRouteChildren: PrefeitoSocialRouteChildren = {
+  PrefeitoSocialConfigurarRoute: PrefeitoSocialConfigurarRoute,
+}
+
+const PrefeitoSocialRouteWithChildren = PrefeitoSocialRoute._addFileChildren(
+  PrefeitoSocialRouteChildren,
+)
+
 interface PrefeitoRouteChildren {
   PrefeitoBenchmarkRoute: typeof PrefeitoBenchmarkRoute
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
   PrefeitoIaRoute: typeof PrefeitoIaRoute
   PrefeitoIntegracoesRoute: typeof PrefeitoIntegracoesRoute
   PrefeitoRelatoriosRoute: typeof PrefeitoRelatoriosRoute
-  PrefeitoSocialRoute: typeof PrefeitoSocialRoute
+  PrefeitoSocialRoute: typeof PrefeitoSocialRouteWithChildren
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
   PrefeitoSecretariaSlugImportarRoute: typeof PrefeitoSecretariaSlugImportarRoute
 }
@@ -626,7 +658,7 @@ const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoIaRoute: PrefeitoIaRoute,
   PrefeitoIntegracoesRoute: PrefeitoIntegracoesRoute,
   PrefeitoRelatoriosRoute: PrefeitoRelatoriosRoute,
-  PrefeitoSocialRoute: PrefeitoSocialRoute,
+  PrefeitoSocialRoute: PrefeitoSocialRouteWithChildren,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
   PrefeitoSecretariaSlugImportarRoute: PrefeitoSecretariaSlugImportarRoute,
 }

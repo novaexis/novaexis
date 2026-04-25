@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Smile,
@@ -16,6 +17,10 @@ import {
   MapPin,
   Newspaper,
   Hash,
+  Settings,
+  Sparkles,
+  Youtube,
+  Music2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -27,6 +32,9 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
+import { GaugeScore } from "@/components/social/GaugeScore";
+import { AlertaCrise } from "@/components/social/AlertaCrise";
+import { ModalSugestaoResposta } from "@/components/social/ModalSugestaoResposta";
 
 export const Route = createFileRoute("/prefeito/social")({
   head: () => ({
@@ -40,7 +48,9 @@ type Plataforma =
   | "instagram"
   | "twitter"
   | "google_maps"
-  | "noticias";
+  | "noticias"
+  | "youtube"
+  | "tiktok";
 type Sentimento = "positivo" | "negativo" | "neutro";
 
 interface Mencao {
@@ -79,6 +89,8 @@ const FILTROS_PLAT: Array<{ v: "todos" | Plataforma; label: string }> = [
   { v: "instagram", label: "Instagram" },
   { v: "google_maps", label: "Google Maps" },
   { v: "noticias", label: "Notícias" },
+  { v: "youtube", label: "YouTube" },
+  { v: "tiktok", label: "TikTok" },
 ];
 
 function SocialPage() {
@@ -157,14 +169,23 @@ function SocialPage() {
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Social Intelligence
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          O que estão falando da sua gestão nas redes e notícias
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Social Intelligence
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            O que estão falando da sua gestão nas redes e notícias
+          </p>
+        </div>
+        <Link to="/prefeito/social/configurar">
+          <Button variant="outline" size="sm">
+            <Settings className="mr-2 h-4 w-4" /> Configurar fontes
+          </Button>
+        </Link>
       </header>
+
+      {tenantId && <AlertaCrise tenantId={tenantId} />}
 
       {loading ? (
         <div className="space-y-4">
@@ -176,7 +197,9 @@ function SocialPage() {
         <>
           {/* KPIs principais */}
           <section className="mb-6 grid gap-4 md:grid-cols-4">
-            <CardScore score={scoreAtual} variacao={variacao} />
+            <div className="flex items-center justify-center rounded-lg border bg-card p-4">
+              <GaugeScore score={scoreAtual} label="Score de aprovação" size={200} />
+            </div>
             <CardSent
               icon={<Smile className="h-5 w-5 text-primary" />}
               label="Positivas"
@@ -199,6 +222,22 @@ function SocialPage() {
               cls="text-foreground"
             />
           </section>
+
+          {variacao != null && (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Variação 7d:{" "}
+              <span
+                className={
+                  "inline-flex items-center gap-1 font-medium " +
+                  (variacao >= 0 ? "text-primary" : "text-destructive")
+                }
+              >
+                {variacao >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                {variacao > 0 ? "+" : ""}
+                {variacao.toFixed(1)} pts
+              </span>
+            </p>
+          )}
 
           {/* Evolução do score */}
           <section className="mb-6 rounded-lg border bg-card p-4 md:p-6">
@@ -346,40 +385,7 @@ function SocialPage() {
   );
 }
 
-function CardScore({
-  score,
-  variacao,
-}: {
-  score: number | null;
-  variacao: number | null;
-}) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-        Score de aprovação
-      </p>
-      <p className="text-3xl font-bold tabular-nums">
-        {score != null ? `${score.toFixed(1)}%` : "—"}
-      </p>
-      {variacao != null && (
-        <p
-          className={
-            "mt-1 flex items-center gap-1 text-xs " +
-            (variacao >= 0 ? "text-primary" : "text-destructive")
-          }
-        >
-          {variacao >= 0 ? (
-            <TrendingUp className="h-3 w-3" />
-          ) : (
-            <TrendingDown className="h-3 w-3" />
-          )}
-          {variacao > 0 ? "+" : ""}
-          {variacao.toFixed(1)} pts (7d)
-        </p>
-      )}
-    </div>
-  );
-}
+// CardScore removido — substituído por GaugeScore.
 
 function CardSent({
   icon,
@@ -413,6 +419,7 @@ function CardSent({
 
 function MencaoItem({ m }: { m: Mencao }) {
   const Plat = plataformaIcon(m.plataforma);
+  const [openModal, setOpenModal] = useState(false);
   const sentBadge =
     m.sentimento === "positivo"
       ? "border-primary/40 bg-primary/10 text-primary"
@@ -447,10 +454,7 @@ function MencaoItem({ m }: { m: Mencao }) {
         {(m.temas?.length || m.alcance) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {m.temas?.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="rounded bg-muted px-1.5 py-0.5 text-[11px]"
-              >
+              <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[11px]">
                 #{t}
               </span>
             ))}
@@ -461,7 +465,23 @@ function MencaoItem({ m }: { m: Mencao }) {
             )}
           </div>
         )}
+        {m.sentimento === "negativo" && (
+          <div className="mt-2">
+            <button
+              onClick={() => setOpenModal(true)}
+              className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Sparkles className="h-3 w-3" /> Sugerir resposta com IA
+            </button>
+          </div>
+        )}
       </div>
+      <ModalSugestaoResposta
+        mencaoId={m.id}
+        conteudo={m.conteudo}
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      />
     </li>
   );
 }
@@ -478,5 +498,11 @@ function plataformaIcon(p: Plataforma) {
       return MapPin;
     case "noticias":
       return Newspaper;
+    case "youtube":
+      return Youtube;
+    case "tiktok":
+      return Music2;
+    default:
+      return Hash;
   }
 }
