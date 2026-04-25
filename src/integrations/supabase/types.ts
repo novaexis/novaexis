@@ -503,6 +503,39 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          habilitada: boolean
+          id: string
+          nome: string
+          planos_permitidos: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          habilitada?: boolean
+          id?: string
+          nome: string
+          planos_permitidos?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          habilitada?: boolean
+          id?: string
+          nome?: string
+          planos_permitidos?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kpis: {
         Row: {
           created_at: string
@@ -682,6 +715,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_limits: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          plano: Database["public"]["Enums"]["tenant_plano"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          plano: Database["public"]["Enums"]["tenant_plano"]
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          plano?: Database["public"]["Enums"]["tenant_plano"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          chave: string
+          created_at: string
+          descricao: string | null
+          id: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
