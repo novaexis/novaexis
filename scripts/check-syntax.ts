@@ -1,18 +1,17 @@
 import { execSync } from "child_process";
-import fs from "fs";
-import path from "path";
 
 const targetFile = "src/routes/parceiro.tsx";
 
 function check() {
-  console.log(`Checking ${targetFile}...`);
+  console.log(`Checking syntax for ${targetFile}...`);
   try {
-    // Run tsc on the specific file to check for syntax and type errors
-    // We use --noEmit to just check, and --jsx preserve to handle React files
-    execSync(`bunx tsc --noEmit --jsx react-jsx --allowJs --target esnext --moduleResolution bundler --skipLibCheck --ignoreWatch node_modules ${targetFile} | grep -v "error TS2307" | grep -v "error TS2345" || true`, { stdio: 'inherit' });
-    console.log("✅ No syntax errors found.");
-  } catch (error) {
-    console.error("❌ Syntax or type errors detected!");
+    // We use a simple regex check or basic parsing check if tsc is too noisy with module resolution
+    // For now, let's try to just check if it's valid JS/TS using bun's internal transpiler check
+    execSync(`bun build ${targetFile} --outdir /tmp/check-build`, { stdio: 'pipe' });
+    console.log("✅ Syntax check passed.");
+  } catch (error: any) {
+    console.error("❌ Syntax error detected!");
+    console.error(error.stdout?.toString() || error.stderr?.toString() || error.message);
     process.exit(1);
   }
 }
