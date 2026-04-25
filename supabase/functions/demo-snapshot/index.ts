@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     // Busca o tenant Marajoense
     const { data: tenant } = await admin
       .from("tenants")
-      .select("id, nome, uf, populacao")
+      .select("id, nome, estado, populacao")
       .eq("nome", DEMO_TENANT_NOME)
       .maybeSingle();
 
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       // Lista municípios aderentes (todos os tenants ativos)
       const { data: municipios } = await admin
         .from("tenants")
-        .select("id, nome, uf, populacao")
+        .select("id, nome, estado, populacao")
         .eq("ativo", true)
         .limit(20);
 
