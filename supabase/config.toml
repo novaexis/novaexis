@@ -32,3 +32,9 @@ verify_jwt = true
 
 [functions.benchmark-automatico]
 verify_jwt = true
+
+[functions.social-intel-coletor]
+verify_jwt = false
+
+[functions.sugerir-resposta-social]
+verify_jwt = true
