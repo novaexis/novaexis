@@ -385,40 +385,7 @@ function SocialPage() {
   );
 }
 
-function CardScore({
-  score,
-  variacao,
-}: {
-  score: number | null;
-  variacao: number | null;
-}) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-        Score de aprovação
-      </p>
-      <p className="text-3xl font-bold tabular-nums">
-        {score != null ? `${score.toFixed(1)}%` : "—"}
-      </p>
-      {variacao != null && (
-        <p
-          className={
-            "mt-1 flex items-center gap-1 text-xs " +
-            (variacao >= 0 ? "text-primary" : "text-destructive")
-          }
-        >
-          {variacao >= 0 ? (
-            <TrendingUp className="h-3 w-3" />
-          ) : (
-            <TrendingDown className="h-3 w-3" />
-          )}
-          {variacao > 0 ? "+" : ""}
-          {variacao.toFixed(1)} pts (7d)
-        </p>
-      )}
-    </div>
-  );
-}
+// CardScore removido — substituído por GaugeScore.
 
 function CardSent({
   icon,
@@ -452,6 +419,7 @@ function CardSent({
 
 function MencaoItem({ m }: { m: Mencao }) {
   const Plat = plataformaIcon(m.plataforma);
+  const [openModal, setOpenModal] = useState(false);
   const sentBadge =
     m.sentimento === "positivo"
       ? "border-primary/40 bg-primary/10 text-primary"
@@ -486,10 +454,7 @@ function MencaoItem({ m }: { m: Mencao }) {
         {(m.temas?.length || m.alcance) && (
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {m.temas?.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="rounded bg-muted px-1.5 py-0.5 text-[11px]"
-              >
+              <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[11px]">
                 #{t}
               </span>
             ))}
@@ -500,7 +465,23 @@ function MencaoItem({ m }: { m: Mencao }) {
             )}
           </div>
         )}
+        {m.sentimento === "negativo" && (
+          <div className="mt-2">
+            <button
+              onClick={() => setOpenModal(true)}
+              className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Sparkles className="h-3 w-3" /> Sugerir resposta com IA
+            </button>
+          </div>
+        )}
       </div>
+      <ModalSugestaoResposta
+        mencaoId={m.id}
+        conteudo={m.conteudo}
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      />
     </li>
   );
 }
