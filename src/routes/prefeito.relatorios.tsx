@@ -292,6 +292,15 @@ function RelatoriosPage() {
                     </Button>
                   </>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => excluirRelatorio(r.id, r.storage_path)}
+                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  aria-label="Excluir relatório"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </li>
           ))}
