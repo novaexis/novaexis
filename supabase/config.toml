@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.admin-users]
 verify_jwt = true
+
+[functions.analisar-arquivo]
+verify_jwt = true
+
+[functions.processar-importacao]
+verify_jwt = true

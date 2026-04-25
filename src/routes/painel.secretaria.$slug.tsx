@@ -11,6 +11,7 @@ import { SecretariaShell } from "@/components/secretaria/SecretariaShell";
 import { TabDemandas } from "@/components/secretaria/TabDemandas";
 import { TabIndicadores } from "@/components/secretaria/TabIndicadores";
 import { TabRelatorios } from "@/components/secretaria/TabRelatorios";
+import { TabIntegracoes } from "@/components/secretaria/TabIntegracoes";
 import { VisaoGeralPlaceholder } from "@/components/secretaria/VisaoGeralPlaceholder";
 import { VisaoGeralSaude } from "@/components/secretaria/saude/VisaoGeralSaude";
 import { VisaoGeralEducacao } from "@/components/secretaria/educacao/VisaoGeralEducacao";
@@ -74,10 +75,11 @@ function SecretariaMunicipalPage() {
 
 function SecretariaContent({ slug }: { slug: string }) {
   const meta = getSecretariaMeta(slug)!;
-  const { roles, primaryRole } = useAuth();
+  const { profile, roles, primaryRole } = useAuth();
   const navigate = useNavigate();
   const { secretaria, kpis, demandas, loading, error, reload, canEdit } =
     useSecretaria(slug);
+  const tenantId = profile?.tenant_id ?? null;
 
   // Guarda extra: se for secretário de outra pasta, redireciona
   const secretarioRole = roles.find((r) => r.role === "secretario");
@@ -127,6 +129,11 @@ function SecretariaContent({ slug }: { slug: string }) {
       indicadores={<TabIndicadores kpis={kpis} />}
       relatorios={
         <TabRelatorios slug={slug} nomeSecretaria={meta.nome} canEdit={canEdit} />
+      }
+      integracoes={
+        tenantId ? (
+          <TabIntegracoes tenantId={tenantId} secretariaSlug={slug} />
+        ) : undefined
       }
     />
   );

@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrefeitoIndexRouteImport } from './routes/prefeito.index'
 import { Route as PrefeitoSocialRouteImport } from './routes/prefeito.social'
 import { Route as PrefeitoRelatoriosRouteImport } from './routes/prefeito.relatorios'
+import { Route as PrefeitoIntegracoesRouteImport } from './routes/prefeito.integracoes'
 import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
 import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
 import { Route as CidadaoServicosRouteImport } from './routes/cidadao.servicos'
@@ -32,6 +33,7 @@ import { Route as CidadaoServicosOuvidoriaRouteImport } from './routes/cidadao.s
 import { Route as CidadaoSaudeAgendarRouteImport } from './routes/cidadao.saude.agendar'
 import { Route as CidadaoEducacaoMatricularRouteImport } from './routes/cidadao.educacao.matricular'
 import { Route as CidadaoDemandaIdRouteImport } from './routes/cidadao.demanda.$id'
+import { Route as PrefeitoSecretariaSlugImportarRouteImport } from './routes/prefeito.secretaria.$slug.importar'
 
 const SecretariaRoute = SecretariaRouteImport.update({
   id: '/secretaria',
@@ -81,6 +83,11 @@ const PrefeitoSocialRoute = PrefeitoSocialRouteImport.update({
 const PrefeitoRelatoriosRoute = PrefeitoRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
+const PrefeitoIntegracoesRoute = PrefeitoIntegracoesRouteImport.update({
+  id: '/integracoes',
+  path: '/integracoes',
   getParentRoute: () => PrefeitoRoute,
 } as any)
 const PrefeitoCaptacaoRoute = PrefeitoCaptacaoRouteImport.update({
@@ -152,6 +159,12 @@ const CidadaoDemandaIdRoute = CidadaoDemandaIdRouteImport.update({
   path: '/demanda/$id',
   getParentRoute: () => CidadaoRoute,
 } as any)
+const PrefeitoSecretariaSlugImportarRoute =
+  PrefeitoSecretariaSlugImportarRouteImport.update({
+    id: '/secretaria/$slug/importar',
+    path: '/secretaria/$slug/importar',
+    getParentRoute: () => PrefeitoRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -167,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -177,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -191,6 +206,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito': typeof PrefeitoIndexRoute
@@ -201,6 +217,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,6 +234,7 @@ export interface FileRoutesById {
   '/cidadao/servicos': typeof CidadaoServicosRouteWithChildren
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRoute
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -227,6 +245,7 @@ export interface FileRoutesById {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -244,6 +263,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito/'
@@ -254,6 +274,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/secretaria/$slug/importar'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -268,6 +289,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito'
@@ -278,6 +300,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/secretaria/$slug/importar'
   id:
     | '__root__'
     | '/'
@@ -293,6 +316,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/integracoes'
     | '/prefeito/relatorios'
     | '/prefeito/social'
     | '/prefeito/'
@@ -303,6 +327,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/secretaria/$slug/importar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -386,6 +411,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/prefeito/relatorios'
       preLoaderRoute: typeof PrefeitoRelatoriosRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
+    '/prefeito/integracoes': {
+      id: '/prefeito/integracoes'
+      path: '/integracoes'
+      fullPath: '/prefeito/integracoes'
+      preLoaderRoute: typeof PrefeitoIntegracoesRouteImport
       parentRoute: typeof PrefeitoRoute
     }
     '/prefeito/captacao': {
@@ -479,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CidadaoDemandaIdRouteImport
       parentRoute: typeof CidadaoRoute
     }
+    '/prefeito/secretaria/$slug/importar': {
+      id: '/prefeito/secretaria/$slug/importar'
+      path: '/secretaria/$slug/importar'
+      fullPath: '/prefeito/secretaria/$slug/importar'
+      preLoaderRoute: typeof PrefeitoSecretariaSlugImportarRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
   }
 }
 
@@ -554,17 +593,21 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
 interface PrefeitoRouteChildren {
   PrefeitoBenchmarkRoute: typeof PrefeitoBenchmarkRoute
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
+  PrefeitoIntegracoesRoute: typeof PrefeitoIntegracoesRoute
   PrefeitoRelatoriosRoute: typeof PrefeitoRelatoriosRoute
   PrefeitoSocialRoute: typeof PrefeitoSocialRoute
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
+  PrefeitoSecretariaSlugImportarRoute: typeof PrefeitoSecretariaSlugImportarRoute
 }
 
 const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoBenchmarkRoute: PrefeitoBenchmarkRoute,
   PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
+  PrefeitoIntegracoesRoute: PrefeitoIntegracoesRoute,
   PrefeitoRelatoriosRoute: PrefeitoRelatoriosRoute,
   PrefeitoSocialRoute: PrefeitoSocialRoute,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
+  PrefeitoSecretariaSlugImportarRoute: PrefeitoSecretariaSlugImportarRoute,
 }
 
 const PrefeitoRouteWithChildren = PrefeitoRoute._addFileChildren(
