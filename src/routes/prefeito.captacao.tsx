@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { CardRecurso, type AlertaRecurso } from "@/components/prefeito/CardRecurso";
 import type { Requisito } from "@/components/prefeito/ChecklistRequisitos";
+import { ComunicadosEstadoSection } from "@/components/prefeito/ComunicadosEstadoSection";
 import { Loader2, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
