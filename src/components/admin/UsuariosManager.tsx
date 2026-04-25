@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  Plus,
   Search,
   Users,
   Shield,
