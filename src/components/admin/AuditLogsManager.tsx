@@ -93,62 +93,41 @@ function LogsTable() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selected, setSelected] = useState<AuditLog | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const perPage = 50;
 
   useEffect(() => {
     void loadLogs();
-  }, []);
+  }, [page]);
 
   async function loadLogs() {
     setLoading(true);
     try {
-      // Validação básica de datas no frontend
       if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
         toast.error("A data inicial não pode ser maior que a data final");
         setLoading(false);
         return;
       }
 
-      let q = supabase
-        .from("audit_logs" as any)
-        .select(`
-          *,
-          profiles:actor_id (
-            email
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(200);
-
-      if (severityFilter !== "all") {
-        const validSeverities = ["info", "warning", "critical"];
-        if (!validSeverities.includes(severityFilter)) {
-          throw new Error("Nível de severidade inválido selecionado.");
-        }
-        q = q.eq("severity", severityFilter);
-      }
-
-      if (actionFilter !== "all") {
-        if (actionFilter.length < 3) {
-          throw new Error("O filtro de ação selecionado é inválido.");
-        }
-        q = q.eq("action", actionFilter);
-      }
-
-      if (dateFrom) q = q.gte("created_at", `${dateFrom}T00:00:00`);
-      if (dateTo) q = q.lte("created_at", `${dateTo}T23:59:59`);
-
-      const { data, error } = await q;
+      const { data, error } = await supabase.functions.invoke("get-audit-logs-admin", {
+        body: {
+          page,
+          perPage,
+          action: actionFilter === "all" ? undefined : actionFilter,
+          severity: severityFilter === "all" ? undefined : severityFilter,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+        },
+      });
       
-      if (error) {
-        console.error("Erro Supabase:", error);
-        throw new Error(`Erro ao consultar banco de dados: ${error.message}`);
-      }
+      if (error) throw error;
       
-      setLogs((data ?? []) as unknown as AuditLog[]);
+      setLogs((data.logs ?? []) as unknown as AuditLog[]);
+      setTotal(data.total ?? 0);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Falha desconhecida ao carregar logs";
+      const msg = e instanceof Error ? e.message : "Falha ao carregar logs via API";
       toast.error(msg);
-      console.error("AuditLogs Error:", e);
     } finally {
       setLoading(false);
     }
@@ -156,6 +135,7 @@ function LogsTable() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      setPage(1);
       void loadLogs();
     }, 300);
     return () => clearTimeout(timer);
@@ -231,8 +211,28 @@ function LogsTable() {
           <RefreshCw className="h-4 w-4" /> Atualizar
         </Button>
         <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} registros
+          {total} registros encontrados (Página {page})
         </span>
+      </div>
+
+      <div className="mb-4 flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          disabled={page <= 1 || loading} 
+          onClick={() => setPage(p => p - 1)}
+        >
+          Anterior
+        </Button>
+        <span className="text-sm font-medium">Página {page}</span>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          disabled={logs.length < perPage || loading} 
+          onClick={() => setPage(p => p + 1)}
+        >
+          Próxima
+        </Button>
       </div>
 
       {loading ? (
