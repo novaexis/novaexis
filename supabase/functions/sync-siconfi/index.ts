@@ -240,8 +240,8 @@ Deno.serve(async (req) => {
           secretaria_slug: "financas",
           nome: INTEGRADOR_NOME,
           descricao: "Sincronização automática RREO/SICONFI - Tesouro Nacional",
-          tipo: "sync_externo",
-          status: "em_execucao",
+          tipo: "api_rest",
+          status: "aguardando_configuracao",
           endpoint: SICONFI_BASE,
           config: { uf: "PA", demonstrativo: "RREO" },
         })
