@@ -12,6 +12,7 @@ interface KPICardProps {
   status?: Status;
   icon?: React.ReactNode;
   onClick?: () => void;
+  fonte?: string | null;
 }
 
 const statusStyles: Record<Status, string> = {
@@ -28,7 +29,9 @@ export function KPICard({
   status = "ok",
   icon,
   onClick,
+  fonte,
 }: KPICardProps) {
+  const fonteReal = !!fonte && fonte !== "seed" && fonte !== "manual";
   const trend =
     variacaoPct == null
       ? null
@@ -79,6 +82,25 @@ export function KPICard({
         </div>
         {icon && <div className="shrink-0 text-primary">{icon}</div>}
       </div>
+      {fonte !== undefined && (
+        <div className="mt-2 flex justify-end">
+          {fonteReal ? (
+            <span
+              className="rounded border border-success/30 bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success"
+              title={`Fonte: ${fonte}`}
+            >
+              ✓ Dado real
+            </span>
+          ) : (
+            <span
+              className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              title="Dado de demonstração (seed)"
+            >
+              Demo
+            </span>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
