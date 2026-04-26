@@ -279,30 +279,47 @@ Deno.serve(async (req) => {
   const logId = log?.id ?? null;
 
   try {
-    const { ano, bimestre, refDate } = calcularPeriodoAlvo();
-    console.log(`[siconfi] sincronizando RREO Pará — exercício=${ano}, bimestre=${bimestre}, refDate=${refDate}`);
+    // Tenta primeiro o período-alvo (recente). Se vier vazio (dados ainda não
+    // publicados pelo Tesouro), faz fallback regredindo bimestres até achar
+    // dados ou esgotar 6 tentativas (~1 ano).
+    let ano = 0, bimestre = 0, refDate = "";
+    let items: SiconfiItem[] = [];
+    const alvo = calcularPeriodoAlvo();
+    let tentativaAno = alvo.ano;
+    let tentativaBim = alvo.bimestre;
 
-    // 1) Anexo I — Balanço Orçamentário
-    const balanco = await fetchSiconfi({
-      an_exercicio: String(ano),
-      nr_periodo: String(bimestre),
-      co_tipo_demonstrativo: "RREO",
-      no_anexo: "RREO-Anexo 01",
-      id_ente: "15", // UF Pará (governo estadual)
-    });
-    await new Promise((r) => setTimeout(r, 1100));
+    for (let i = 0; i < 6 && items.length === 0; i++) {
+      console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+      const resp = await fetchSiconfi({
+        an_exercicio: String(tentativaAno),
+        nr_periodo: String(tentativaBim),
+        co_tipo_demonstrativo: "RREO",
+        id_ente: "15", // UF Pará (governo estadual)
+      });
+      if ((resp.items?.length ?? 0) > 0) {
+        items = resp.items!;
+        ano = tentativaAno;
+        bimestre = tentativaBim;
+        // referencia_data = último dia do bimestre encontrado
+        refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+        console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+        break;
+      }
+      // Regride 1 bimestre
+      tentativaBim--;
+      if (tentativaBim < 1) {
+        tentativaBim = 6;
+        tentativaAno--;
+      }
+      await new Promise((r) => setTimeout(r, 1100));
+    }
 
-    // 2) Anexo II — Despesa por Função
-    const porFuncao = await fetchSiconfi({
-      an_exercicio: String(ano),
-      nr_periodo: String(bimestre),
-      co_tipo_demonstrativo: "RREO",
-      no_anexo: "RREO-Anexo 02",
-      id_ente: "15",
-    });
+    if (items.length === 0) {
+      throw new Error("SICONFI não retornou dados para o Pará nos últimos 6 bimestres.");
+    }
 
-    const kpisBalanco = extrairKpisBalanco(balanco.items ?? [], tenantId, refDate);
-    const kpisFuncao = extrairKpisPorFuncao(porFuncao.items ?? [], tenantId, refDate);
+    const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
+    const kpisFuncao = extrairKpisPorFuncao(items, tenantId, refDate);
     const todos = [...kpisBalanco, ...kpisFuncao];
 
     let salvos = 0;
