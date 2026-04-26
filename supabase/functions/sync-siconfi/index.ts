@@ -103,30 +103,36 @@ async function fetchSiconfi(params: Record<string, string>, retries = 3): Promis
 }
 
 /**
- * Extrai KPIs do payload RREO (Anexo I — Balanço Orçamentário).
- * O SICONFI retorna várias linhas; pegamos:
- *  - "RECEITAS CORRENTES" coluna "RECEITAS REALIZADAS"
- *  - "DESPESAS CORRENTES" coluna "DESPESAS EMPENHADAS"
+ * Extrai KPIs do Anexo I (Balanço Orçamentário).
+ * Conforme payload real do SICONFI, as colunas relevantes são:
+ *   - "PREVISÃO ATUALIZADA (a)"   → receita prevista
+ *   - "Até o Bimestre (c)"        → receita realizada acumulada
+ *   - "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)" → despesa empenhada
  */
 function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: string) {
   const kpis: Array<Record<string, unknown>> = [];
+  const a01 = items.filter((i) => (i.anexo ?? "").includes("Anexo 01"));
 
-  const findItem = (contaIncludes: string, colunaIncludes: string) =>
-    items.find(
+  const find = (contaIncludes: string, colunaExact: string) =>
+    a01.find(
       (i) =>
         (i.conta ?? "").toUpperCase().includes(contaIncludes.toUpperCase()) &&
-        (i.coluna ?? "").toUpperCase().includes(colunaIncludes.toUpperCase()),
+        (i.coluna ?? "").trim().toUpperCase() === colunaExact.toUpperCase(),
     );
 
-  const receitaRealizada = findItem("RECEITAS CORRENTES", "REALIZADAS");
-  const receitaPrevista = findItem("RECEITAS CORRENTES", "PREVIS");
-  const despesaEmpenhada = findItem("DESPESAS CORRENTES", "EMPENHADAS");
+  const receitaPrevista = find("RECEITAS CORRENTES", "PREVISÃO ATUALIZADA (a)");
+  const receitaRealizada = find("RECEITAS CORRENTES", "Até o Bimestre (c)");
+  const despesaEmpenhada = a01.find(
+    (i) =>
+      (i.conta ?? "").toUpperCase().includes("DESPESAS CORRENTES") &&
+      (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
+  );
 
   if (receitaRealizada?.valor != null) {
     kpis.push({
       tenant_id: tenantId,
       secretaria_slug: "financas",
-      indicador: "Receita Corrente Realizada",
+      indicador: "Receita Corrente Realizada (acum. bimestre)",
       valor: receitaRealizada.valor,
       unidade: "R$",
       referencia_data: refDate,
@@ -138,7 +144,7 @@ function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: str
     kpis.push({
       tenant_id: tenantId,
       secretaria_slug: "financas",
-      indicador: "Despesa Corrente Empenhada",
+      indicador: "Despesa Corrente Empenhada (acum. bimestre)",
       valor: despesaEmpenhada.valor,
       unidade: "R$",
       referencia_data: refDate,
@@ -163,17 +169,19 @@ function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: str
 }
 
 /**
- * Extrai KPIs por função orçamentária (RREO Anexo II — Despesa por Função).
- * Cada item traz cod_conta = código da função (ex: "10").
+ * Extrai KPIs por função orçamentária (Anexo II — Despesa por Função).
+ * O campo `conta` contém o nome textual da função (ex: "Saúde", "Educação").
+ * Coluna alvo: "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)".
  */
 function extrairKpisPorFuncao(items: SiconfiItem[], tenantId: string, refDate: string) {
   const kpis: Array<Record<string, unknown>> = [];
-  for (const [codigo, meta] of Object.entries(FUNCOES)) {
-    // Procura linha cuja conta inicia com o código + " " e coluna de empenhadas
-    const item = items.find(
+  const a02 = items.filter((i) => (i.anexo ?? "").includes("Anexo 02"));
+
+  for (const [funcKey, meta] of Object.entries(FUNCOES)) {
+    const item = a02.find(
       (i) =>
-        (i.cod_conta === codigo || (i.conta ?? "").trim().startsWith(codigo)) &&
-        (i.coluna ?? "").toUpperCase().includes("EMPENHADAS"),
+        (i.conta ?? "").trim().toLowerCase() === funcKey.toLowerCase() &&
+        (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
     );
     if (item?.valor != null) {
       kpis.push({
