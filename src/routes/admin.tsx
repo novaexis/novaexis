@@ -98,6 +98,10 @@ function AdminPanel() {
           <AuditLogsManager />
         </TabsContent>
 
+        <TabsContent value="integracoes" className="mt-5">
+          <IntegracoesManager />
+        </TabsContent>
+
         <TabsContent value="config" className="mt-5">
           <ConfigGlobaisManager />
         </TabsContent>
