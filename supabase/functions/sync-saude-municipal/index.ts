@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
 
     resultados.push({ municipio: mun.nome, ibge: mun.ibge_codigo, kpis_salvos: kpisMun, erros: errosMun });
     erros.push(...errosMun.map((e) => `${mun.nome}: ${e}`));
-  }
+  }));
 
   return new Response(
     JSON.stringify({
