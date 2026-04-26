@@ -518,6 +518,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Validação do payload — detecta mudanças no schema/formato do SICONFI
+    const alertas = validarPayloadSiconfi(items);
+    if (alertas.length > 0) {
+      console.warn(
+        `[siconfi] ${alertas.length} alerta(s) de payload detectado(s):`,
+        JSON.stringify(alertas, null, 2),
+      );
+    }
+    const temAlertaCritico = alertas.some((a) => a.severidade === "critico");
+
     const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
     const kpisFuncao = extrairKpisPorFuncao(items, tenantId, refDate);
     const todos = [...kpisBalanco, ...kpisFuncao];
