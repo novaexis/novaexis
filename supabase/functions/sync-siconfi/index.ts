@@ -372,15 +372,22 @@ Deno.serve(async (req) => {
       console.error(`[siconfi] ${falhas.length} falha(s) detalhada(s):`, JSON.stringify(falhas, null, 2));
     }
 
+    const resumoErro = falhas.length > 0
+      ? `${falhas.length}/${todos.length} KPIs falharam: ` +
+        falhas.slice(0, 3).map((f) => `[${f.secretaria_slug}/${f.indicador}] ${f.erro_codigo ?? ""} ${f.erro_mensagem}`).join(" | ") +
+        (falhas.length > 3 ? ` (+${falhas.length - 3} mais)` : "")
+      : null;
+
     if (logId) {
       await supabase
         .from("sync_logs")
         .update({
           concluido_at: new Date().toISOString(),
-          status: ignorados > 0 && salvos === 0 ? "erro" : "sucesso",
+          status: ignorados > 0 && salvos === 0 ? "erro" : (ignorados > 0 ? "parcial" : "sucesso"),
           registros_processados: todos.length,
           registros_salvos: salvos,
           registros_ignorados: ignorados,
+          erro_mensagem: resumoErro,
           duracao_ms: Date.now() - inicio,
         })
         .eq("id", logId);
@@ -388,22 +395,23 @@ Deno.serve(async (req) => {
     await supabase
       .from("integradores")
       .update({
-        status: "ativo",
+        status: ignorados > 0 && salvos === 0 ? "erro" : "ativo",
         ultimo_sync: new Date().toISOString(),
-        ultimo_erro: null,
+        ultimo_erro: resumoErro,
         total_registros_importados: salvos,
       })
       .eq("id", integradorId);
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: ignorados === 0,
         exercicio: ano,
         bimestre,
         referencia_data: refDate,
         processados: todos.length,
         salvos,
         ignorados,
+        falhas, // detalhe completo de cada KPI que falhou
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
