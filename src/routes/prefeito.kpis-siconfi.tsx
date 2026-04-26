@@ -237,6 +237,9 @@ function KpisSiconfiPage() {
             Atualizar
           </Button>
           <Button asChild size="sm" variant="ghost">
+            <Link to="/prefeito/kpis-siconfi/auditoria">Auditoria</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
             <Link to="/prefeito/integracoes">Gerenciar integrações</Link>
           </Button>
         </div>

@@ -37,6 +37,7 @@ import { Route as CidadaoSaudeRouteImport } from './routes/cidadao.saude'
 import { Route as CidadaoPerfilRouteImport } from './routes/cidadao.perfil'
 import { Route as CidadaoEducacaoRouteImport } from './routes/cidadao.educacao'
 import { Route as PrefeitoSocialConfigurarRouteImport } from './routes/prefeito.social.configurar'
+import { Route as PrefeitoKpisSiconfiAuditoriaRouteImport } from './routes/prefeito.kpis-siconfi.auditoria'
 import { Route as PainelSecretariaSlugRouteImport } from './routes/painel.secretaria.$slug'
 import { Route as GovernadorSecretariaSlugRouteImport } from './routes/governador.secretaria.$slug'
 import { Route as CidadaoServicosSolicitarRouteImport } from './routes/cidadao.servicos.solicitar'
@@ -187,6 +188,12 @@ const PrefeitoSocialConfigurarRoute =
     path: '/configurar',
     getParentRoute: () => PrefeitoSocialRoute,
   } as any)
+const PrefeitoKpisSiconfiAuditoriaRoute =
+  PrefeitoKpisSiconfiAuditoriaRouteImport.update({
+    id: '/auditoria',
+    path: '/auditoria',
+    getParentRoute: () => PrefeitoKpisSiconfiRoute,
+  } as any)
 const PainelSecretariaSlugRoute = PainelSecretariaSlugRouteImport.update({
   id: '/painel/secretaria/$slug',
   path: '/painel/secretaria/$slug',
@@ -257,7 +264,7 @@ export interface FileRoutesByFullPath {
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
-  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRoute
+  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/kpis-siconfi/auditoria': typeof PrefeitoKpisSiconfiAuditoriaRoute
   '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
@@ -294,7 +302,7 @@ export interface FileRoutesByTo {
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
-  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRoute
+  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito': typeof PrefeitoIndexRoute
@@ -305,6 +313,7 @@ export interface FileRoutesByTo {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/kpis-siconfi/auditoria': typeof PrefeitoKpisSiconfiAuditoriaRoute
   '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
@@ -333,7 +342,7 @@ export interface FileRoutesById {
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
-  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRoute
+  '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
   '/prefeito/relatorios': typeof PrefeitoRelatoriosRoute
   '/prefeito/social': typeof PrefeitoSocialRouteWithChildren
   '/prefeito/': typeof PrefeitoIndexRoute
@@ -344,6 +353,7 @@ export interface FileRoutesById {
   '/cidadao/servicos/solicitar': typeof CidadaoServicosSolicitarRoute
   '/governador/secretaria/$slug': typeof GovernadorSecretariaSlugRoute
   '/painel/secretaria/$slug': typeof PainelSecretariaSlugRoute
+  '/prefeito/kpis-siconfi/auditoria': typeof PrefeitoKpisSiconfiAuditoriaRoute
   '/prefeito/social/configurar': typeof PrefeitoSocialConfigurarRoute
   '/prefeito/secretaria/$slug/importar': typeof PrefeitoSecretariaSlugImportarRoute
 }
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/kpis-siconfi/auditoria'
     | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   fileRoutesByTo: FileRoutesByTo
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/kpis-siconfi/auditoria'
     | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   id:
@@ -459,6 +471,7 @@ export interface FileRouteTypes {
     | '/cidadao/servicos/solicitar'
     | '/governador/secretaria/$slug'
     | '/painel/secretaria/$slug'
+    | '/prefeito/kpis-siconfi/auditoria'
     | '/prefeito/social/configurar'
     | '/prefeito/secretaria/$slug/importar'
   fileRoutesById: FileRoutesById
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrefeitoSocialConfigurarRouteImport
       parentRoute: typeof PrefeitoSocialRoute
     }
+    '/prefeito/kpis-siconfi/auditoria': {
+      id: '/prefeito/kpis-siconfi/auditoria'
+      path: '/auditoria'
+      fullPath: '/prefeito/kpis-siconfi/auditoria'
+      preLoaderRoute: typeof PrefeitoKpisSiconfiAuditoriaRouteImport
+      parentRoute: typeof PrefeitoKpisSiconfiRoute
+    }
     '/painel/secretaria/$slug': {
       id: '/painel/secretaria/$slug'
       path: '/painel/secretaria/$slug'
@@ -821,6 +841,17 @@ const GovernadorRouteWithChildren = GovernadorRoute._addFileChildren(
   GovernadorRouteChildren,
 )
 
+interface PrefeitoKpisSiconfiRouteChildren {
+  PrefeitoKpisSiconfiAuditoriaRoute: typeof PrefeitoKpisSiconfiAuditoriaRoute
+}
+
+const PrefeitoKpisSiconfiRouteChildren: PrefeitoKpisSiconfiRouteChildren = {
+  PrefeitoKpisSiconfiAuditoriaRoute: PrefeitoKpisSiconfiAuditoriaRoute,
+}
+
+const PrefeitoKpisSiconfiRouteWithChildren =
+  PrefeitoKpisSiconfiRoute._addFileChildren(PrefeitoKpisSiconfiRouteChildren)
+
 interface PrefeitoSocialRouteChildren {
   PrefeitoSocialConfigurarRoute: typeof PrefeitoSocialConfigurarRoute
 }
@@ -838,7 +869,7 @@ interface PrefeitoRouteChildren {
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
   PrefeitoIaRoute: typeof PrefeitoIaRoute
   PrefeitoIntegracoesRoute: typeof PrefeitoIntegracoesRoute
-  PrefeitoKpisSiconfiRoute: typeof PrefeitoKpisSiconfiRoute
+  PrefeitoKpisSiconfiRoute: typeof PrefeitoKpisSiconfiRouteWithChildren
   PrefeitoRelatoriosRoute: typeof PrefeitoRelatoriosRoute
   PrefeitoSocialRoute: typeof PrefeitoSocialRouteWithChildren
   PrefeitoIndexRoute: typeof PrefeitoIndexRoute
@@ -850,7 +881,7 @@ const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
   PrefeitoIaRoute: PrefeitoIaRoute,
   PrefeitoIntegracoesRoute: PrefeitoIntegracoesRoute,
-  PrefeitoKpisSiconfiRoute: PrefeitoKpisSiconfiRoute,
+  PrefeitoKpisSiconfiRoute: PrefeitoKpisSiconfiRouteWithChildren,
   PrefeitoRelatoriosRoute: PrefeitoRelatoriosRoute,
   PrefeitoSocialRoute: PrefeitoSocialRouteWithChildren,
   PrefeitoIndexRoute: PrefeitoIndexRoute,
