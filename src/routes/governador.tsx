@@ -36,6 +36,7 @@ interface KPIRow {
   variacao_pct: number | null;
   status: "ok" | "atencao" | "critico";
   referencia_data: string;
+  fonte: string | null;
 }
 
 const SECRETARIAS_META: Record<string, { nome: string; icon: typeof Heart; indicadorPrincipal: string }> = {
