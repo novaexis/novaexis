@@ -63,6 +63,146 @@ interface SiconfiResponse {
   hasMore?: boolean;
 }
 
+type AlertaSeveridade = "info" | "atencao" | "critico";
+interface AlertaPayload {
+  severidade: AlertaSeveridade;
+  codigo: string;
+  mensagem: string;
+  detalhe?: Record<string, unknown>;
+}
+
+const CAMPOS_OBRIGATORIOS: Array<keyof SiconfiItem> = ["conta", "coluna", "valor", "anexo"];
+const ANEXOS_ESPERADOS = ["Anexo 01", "Anexo 02"];
+const COLUNAS_ESPERADAS_A01 = ["PREVISÃO ATUALIZADA (a)", "Até o Bimestre (c)", "EMPENHADAS ATÉ O BIMESTRE"];
+const COLUNA_ESPERADA_A02 = "EMPENHADAS ATÉ O BIMESTRE";
+
+/**
+ * Valida o payload bruto do SICONFI e retorna alertas amigáveis quando
+ * detecta mudanças inesperadas de schema, formato ou cobertura. Não lança
+ * erro — apenas sinaliza, para que o sync continue salvando o que conseguir.
+ */
+function validarPayloadSiconfi(items: SiconfiItem[]): AlertaPayload[] {
+  const alertas: AlertaPayload[] = [];
+
+  if (!Array.isArray(items)) {
+    alertas.push({
+      severidade: "critico",
+      codigo: "PAYLOAD_NAO_ARRAY",
+      mensagem: "O SICONFI retornou um payload onde 'items' não é uma lista. O formato da API pode ter mudado.",
+    });
+    return alertas;
+  }
+
+  if (items.length === 0) {
+    alertas.push({
+      severidade: "atencao",
+      codigo: "PAYLOAD_VAZIO",
+      mensagem: "O SICONFI retornou uma lista vazia para o período consultado.",
+    });
+    return alertas;
+  }
+
+  // 1) Campos obrigatórios presentes em pelo menos parte dos itens
+  const amostra = items.slice(0, 50);
+  const camposFaltantes = CAMPOS_OBRIGATORIOS.filter(
+    (c) => !amostra.some((it) => it[c] !== undefined && it[c] !== null),
+  );
+  if (camposFaltantes.length > 0) {
+    alertas.push({
+      severidade: "critico",
+      codigo: "CAMPOS_AUSENTES",
+      mensagem: `Campos esperados não encontrados em nenhum item da amostra: ${camposFaltantes.join(", ")}. O schema da API SICONFI pode ter mudado.`,
+      detalhe: { camposFaltantes, amostraTamanho: amostra.length },
+    });
+  }
+
+  // 2) Tipo de 'valor' deve ser numérico quando presente
+  const valoresInvalidos = amostra.filter(
+    (it) => it.valor !== undefined && it.valor !== null && typeof it.valor !== "number",
+  ).length;
+  if (valoresInvalidos > 0) {
+    alertas.push({
+      severidade: "critico",
+      codigo: "VALOR_TIPO_INESPERADO",
+      mensagem: `${valoresInvalidos} item(ns) na amostra possuem 'valor' em formato não numérico. Antes era sempre número.`,
+      detalhe: { valoresInvalidos, amostraTamanho: amostra.length },
+    });
+  }
+
+  // 3) Anexos esperados presentes
+  const anexosPresentes = new Set(items.map((i) => (i.anexo ?? "").trim()).filter(Boolean));
+  const anexosFaltando = ANEXOS_ESPERADOS.filter(
+    (esp) => ![...anexosPresentes].some((a) => a.includes(esp)),
+  );
+  if (anexosFaltando.length > 0) {
+    alertas.push({
+      severidade: "atencao",
+      codigo: "ANEXO_AUSENTE",
+      mensagem: `Anexos esperados não encontrados no payload: ${anexosFaltando.join(", ")}. Pode haver mudança na nomenclatura ou ausência de demonstrativo.`,
+      detalhe: { anexosPresentes: [...anexosPresentes], anexosFaltando },
+    });
+  }
+
+  // 4) Colunas esperadas no Anexo 01
+  const a01 = items.filter((i) => (i.anexo ?? "").includes("Anexo 01"));
+  if (a01.length > 0) {
+    const colunasA01 = new Set(a01.map((i) => (i.coluna ?? "").trim().toUpperCase()).filter(Boolean));
+    const colunasA01Faltando = COLUNAS_ESPERADAS_A01.filter(
+      (esp) => ![...colunasA01].some((c) => c.includes(esp.toUpperCase())),
+    );
+    if (colunasA01Faltando.length > 0) {
+      alertas.push({
+        severidade: "atencao",
+        codigo: "COLUNA_A01_AUSENTE",
+        mensagem: `Colunas esperadas no Anexo 01 (Balanço Orçamentário) não encontradas: ${colunasA01Faltando.join(" | ")}. O formato das colunas do RREO pode ter mudado.`,
+        detalhe: { colunasPresentes: [...colunasA01].slice(0, 20) },
+      });
+    }
+  }
+
+  // 5) Coluna esperada no Anexo 02
+  const a02 = items.filter((i) => (i.anexo ?? "").includes("Anexo 02"));
+  if (a02.length > 0) {
+    const temColunaEsperada = a02.some((i) =>
+      (i.coluna ?? "").toUpperCase().includes(COLUNA_ESPERADA_A02),
+    );
+    if (!temColunaEsperada) {
+      alertas.push({
+        severidade: "atencao",
+        codigo: "COLUNA_A02_AUSENTE",
+        mensagem: `Coluna '${COLUNA_ESPERADA_A02}' não encontrada no Anexo 02 (Despesa por Função).`,
+      });
+    }
+  }
+
+  // 6) Funções orçamentárias mapeadas — quais não vieram no payload?
+  if (a02.length > 0) {
+    const funcoesPresentes = new Set(
+      a02.map((i) => (i.conta ?? "").trim().toLowerCase()).filter(Boolean),
+    );
+    const funcoesFaltando = Object.keys(FUNCOES).filter((f) => !funcoesPresentes.has(f));
+    if (funcoesFaltando.length > 0) {
+      alertas.push({
+        severidade: "info",
+        codigo: "FUNCOES_AUSENTES",
+        mensagem: `Funções orçamentárias mapeadas não encontradas no payload: ${funcoesFaltando.join(", ")}. Pode ser ausência real (sem execução) ou mudança no nome da função.`,
+        detalhe: { funcoesFaltando, funcoesPresentesAmostra: [...funcoesPresentes].slice(0, 30) },
+      });
+    }
+  }
+
+  return alertas;
+}
+
+function formatarAlertasParaUsuario(alertas: AlertaPayload[]): string | null {
+  if (alertas.length === 0) return null;
+  const ordem: Record<AlertaSeveridade, number> = { critico: 0, atencao: 1, info: 2 };
+  const ordenados = [...alertas].sort((a, b) => ordem[a.severidade] - ordem[b.severidade]);
+  return ordenados
+    .map((a) => `[${a.severidade.toUpperCase()}] ${a.codigo}: ${a.mensagem}`)
+    .join(" | ");
+}
+
 /** Calcula bimestre/ano alvo: último bimestre fechado há ≥30 dias. */
 function calcularPeriodoAlvo(now = new Date()): { ano: number; bimestre: number; refDate: string } {
   // Volta ~45 dias para garantir que o bimestre já foi publicado
