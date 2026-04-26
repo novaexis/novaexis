@@ -50,10 +50,11 @@ interface SiconfiItem {
   conta?: string;
   coluna?: string;
   valor?: number;
-  cod_ibge?: string;
+  cod_ibge?: number | string;
   exercicio?: number;
   periodo?: number;
   populacao?: number;
+  anexo?: string;
 }
 
 interface SiconfiResponse {
