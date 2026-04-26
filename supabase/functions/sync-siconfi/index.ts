@@ -202,26 +202,55 @@ function extrairKpisPorFuncao(items: SiconfiItem[], tenantId: string, refDate: s
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Body opcional. Aceita:
+  //   { tenant_id?: string, exercicio?: number, bimestre?: 1..6 }
+  // - tenant_id: força um tenant específico (estado ou município que tenha id_ente IBGE em config).
+  //   Se omitido, resolve dinamicamente o Estado do Pará.
+  // - exercicio + bimestre: reprocessa um período exato. Se omitidos, usa fallback automático.
+  let body: { tenant_id?: string; exercicio?: number; bimestre?: number } = {};
+  if (req.method === "POST") {
+    try {
+      const txt = await req.text();
+      if (txt) body = JSON.parse(txt);
+    } catch {
+      // body inválido — segue com defaults
+    }
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Resolver tenant do Estado do Pará dinamicamente.
-  // Critério: tipo='estado' E (estado='PA' OU slug ILIKE '%para%').
-  // Mais robusto do que depender de um secret estático — funciona mesmo se o
-  // tenant for renomeado/recriado.
-  const { data: tenantRow, error: tenantErr } = await supabase
-    .from("tenants")
-    .select("id, nome, slug, estado")
-    .eq("tipo", "estado")
-    .or("estado.eq.PA,slug.ilike.%para%")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  // Resolver tenant: se body.tenant_id fornecido, usa ele; senão Estado do Pará dinâmico.
+  let tenantRow: { id: string; nome: string; slug?: string; estado?: string; tipo?: string; config?: Record<string, unknown> } | null = null;
+  let tenantErr: { message: string } | null = null;
+
+  if (body.tenant_id) {
+    const r = await supabase
+      .from("tenants")
+      .select("id, nome, slug, estado, tipo, config")
+      .eq("id", body.tenant_id)
+      .maybeSingle();
+    tenantRow = r.data;
+    tenantErr = r.error;
+  } else {
+    const r = await supabase
+      .from("tenants")
+      .select("id, nome, slug, estado, tipo, config")
+      .eq("tipo", "estado")
+      .or("estado.eq.PA,slug.ilike.%para%")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    tenantRow = r.data;
+    tenantErr = r.error;
+  }
 
   if (tenantErr || !tenantRow?.id) {
-    const msg = tenantErr?.message ?? "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').";
+    const msg = tenantErr?.message ?? (body.tenant_id
+      ? `Tenant '${body.tenant_id}' não encontrado.`
+      : "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').");
     console.error("[siconfi] resolução de tenant falhou:", msg);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
@@ -229,7 +258,11 @@ Deno.serve(async (req) => {
     });
   }
   const tenantId = tenantRow.id;
-  console.log(`[siconfi] tenant estadual resolvido: ${tenantRow.nome} (${tenantId})`);
+  // id_ente IBGE: 15 = governo estadual PA. Para municípios, ler de tenants.config.id_ente_ibge.
+  const idEnte = String(
+    (tenantRow.config as { id_ente_ibge?: string | number } | undefined)?.id_ente_ibge ?? "15",
+  );
+  console.log(`[siconfi] tenant resolvido: ${tenantRow.nome} (${tenantId}), id_ente=${idEnte}`);
 
   // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
   let integradorId: string | null = null;
