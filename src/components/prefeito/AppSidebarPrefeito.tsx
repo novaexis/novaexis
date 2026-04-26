@@ -9,6 +9,7 @@ import {
   Radio,
   FileText,
   Plug,
+  LineChart,
   Settings,
   LogOut,
   Menu,
