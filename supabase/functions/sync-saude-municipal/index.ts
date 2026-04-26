@@ -28,12 +28,12 @@ async function contarPaginado(
   baseUrl: string,
   params: Record<string, string>,
   apiKey?: string,
-  maxPaginas = 50,
-): Promise<{ total: number; com_hospitalar: number; com_cirurgico: number }> {
+  maxPaginas = 40,
+): Promise<{ total: number; com_hospitalar: number; com_cirurgico: number; paginas: number }> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
-  let total = 0, com_hospitalar = 0, com_cirurgico = 0;
+  let total = 0, com_hospitalar = 0, com_cirurgico = 0, paginas = 0;
   for (let pagina = 1; pagina <= maxPaginas; pagina++) {
     const url = new URL(baseUrl);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -42,11 +42,12 @@ async function contarPaginado(
 
     const res = await fetch(url.toString(), { headers });
     if (!res.ok) {
-      if (res.status === 404 && pagina > 1) break; // fim das páginas
-      throw new Error(`HTTP ${res.status}`);
+      if (res.status === 404 && pagina > 1) break;
+      throw new Error(`HTTP ${res.status} pag ${pagina}`);
     }
     const data = await res.json();
     const arr = data.estabelecimentos ?? [];
+    paginas = pagina;
     if (arr.length === 0) break;
 
     total += arr.length;
@@ -54,10 +55,9 @@ async function contarPaginado(
       if (e.estabelecimento_possui_atendimento_hospitalar === 1) com_hospitalar++;
       if (e.estabelecimento_possui_centro_cirurgico === 1) com_cirurgico++;
     }
-    if (arr.length < 20) break; // última página
-    await new Promise((r) => setTimeout(r, 80)); // rate limit gentil
+    if (arr.length < 20) break;
   }
-  return { total, com_hospitalar, com_cirurgico };
+  return { total, com_hospitalar, com_cirurgico, paginas };
 }
 
 Deno.serve(async (req) => {
