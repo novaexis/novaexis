@@ -1262,6 +1262,7 @@ export type Database = {
           config: Json
           created_at: string
           descricao: string | null
+          endpoint: string | null
           id: string
           nome: string
           secretaria_slug: string
@@ -1277,6 +1278,7 @@ export type Database = {
           config?: Json
           created_at?: string
           descricao?: string | null
+          endpoint?: string | null
           id?: string
           nome: string
           secretaria_slug: string
@@ -1292,6 +1294,7 @@ export type Database = {
           config?: Json
           created_at?: string
           descricao?: string | null
+          endpoint?: string | null
           id?: string
           nome?: string
           secretaria_slug?: string
