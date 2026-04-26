@@ -1,25 +1,16 @@
 // @ts-nocheck
 /**
- * sync-siconfi
+ * sync-siconfi (Bloco 9 — Prompt 41)
  *
- * Sincroniza dados de execução orçamentária do Estado do Pará
- * a partir da API pública do SICONFI (Tesouro Nacional / STN).
+ * Sincroniza dados reais do Estado do Pará a partir da API pública do
+ * Tesouro Nacional (SICONFI/STN). Cobre três demonstrativos:
+ *   - RREO   (bimestral)  → execução orçamentária por função
+ *   - RGF    (quadrimestral) → pessoal vs RCL, dívida consolidada
+ *   - FINBRA (anual)      → receita total consolidada
  *
- * Fonte: https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo
- * Auth: nenhuma (API pública)
- * Rate limit: ~1 req/s entre chamadas
- *
- * Indicadores extraídos (todos vinculados ao tenant do Estado do Pará,
- * resolvido dinamicamente da tabela `tenants` via tipo='estado' + estado='PA'):
- *   - Receita Realizada (R$)                 — secretaria 'financas'
- *   - Despesa Empenhada (R$)                 — secretaria 'financas'
- *   - Execução Orçamentária (%)              — secretaria 'financas'
- *   - Despesa por função: Saúde / Educação / Segurança / Infra / Assistência
- *
- * Idempotência: upsert via índice único parcial
- *   (tenant_id, indicador, referencia_data, secretaria_slug) WHERE fonte LIKE 'api:%'
- *
- * Agendamento: mensal (dia 5, dados bimestrais demoram ~30 dias para publicar).
+ * Indicadores são UPSERTed na tabela `kpis` com `fonte` específica
+ * (api:siconfi-rreo / -rgf / -finbra). Dados seed são preservados —
+ * a UI prefere o registro mais recente por (secretaria, indicador).
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -29,636 +20,354 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SICONFI_BASE = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo";
-const INTEGRADOR_NOME = "sync-siconfi";
-const FONTE = "api:siconfi";
+const SICONFI_BASE = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt";
+const UA = "NovaeXis-Integrador/1.0 (contato@novaexis.com.br)";
 
-// Mapeamento: nome da função orçamentária (campo "conta" do Anexo 02)
-// -> (indicador legível, secretaria_slug). Comparação case-insensitive exata.
-const FUNCOES: Record<string, { nome: string; secretaria: string }> = {
-  "saúde": { nome: "Despesa Empenhada - Saúde", secretaria: "saude" },
-  "educação": { nome: "Despesa Empenhada - Educação", secretaria: "educacao" },
-  "segurança pública": { nome: "Despesa Empenhada - Segurança Pública", secretaria: "seguranca" },
-  "urbanismo": { nome: "Despesa Empenhada - Urbanismo", secretaria: "infraestrutura" },
-  "saneamento": { nome: "Despesa Empenhada - Saneamento", secretaria: "infraestrutura" },
-  "transporte": { nome: "Despesa Empenhada - Transporte", secretaria: "infraestrutura" },
-  "assistência social": { nome: "Despesa Empenhada - Assistência Social", secretaria: "assistencia" },
+// Mapeamento função orçamentária → secretaria estadual NovaeXis
+const FUNCAO_PARA_SLUG: Record<string, string> = {
+  "Saúde": "sespa",
+  "Educação": "seduc",
+  "Segurança Pública": "segup",
+  "Assistência Social": "semas",
+  "Habitação": "seinfra",
+  "Transporte": "seinfra",
+  "Urbanismo": "seinfra",
 };
 
-interface SiconfiItem {
-  cod_conta?: string;
-  conta?: string;
-  coluna?: string;
-  valor?: number;
-  cod_ibge?: number | string;
-  exercicio?: number;
-  periodo?: number;
-  populacao?: number;
-  anexo?: string;
-}
-
-interface SiconfiResponse {
-  items?: SiconfiItem[];
-  count?: number;
-  hasMore?: boolean;
-}
-
-type AlertaSeveridade = "info" | "atencao" | "critico";
-interface AlertaPayload {
-  severidade: AlertaSeveridade;
-  codigo: string;
-  mensagem: string;
-  detalhe?: Record<string, unknown>;
-}
-
-const CAMPOS_OBRIGATORIOS: Array<keyof SiconfiItem> = ["conta", "coluna", "valor", "anexo"];
-const ANEXOS_ESPERADOS = ["Anexo 01", "Anexo 02"];
-const COLUNAS_ESPERADAS_A01 = ["PREVISÃO ATUALIZADA (a)", "Até o Bimestre (c)", "EMPENHADAS ATÉ O BIMESTRE"];
-const COLUNA_ESPERADA_A02 = "EMPENHADAS ATÉ O BIMESTRE";
-
-/**
- * Valida o payload bruto do SICONFI e retorna alertas amigáveis quando
- * detecta mudanças inesperadas de schema, formato ou cobertura. Não lança
- * erro — apenas sinaliza, para que o sync continue salvando o que conseguir.
- */
-function validarPayloadSiconfi(items: SiconfiItem[]): AlertaPayload[] {
-  const alertas: AlertaPayload[] = [];
-
-  if (!Array.isArray(items)) {
-    alertas.push({
-      severidade: "critico",
-      codigo: "PAYLOAD_NAO_ARRAY",
-      mensagem: "O SICONFI retornou um payload onde 'items' não é uma lista. O formato da API pode ter mudado.",
-    });
-    return alertas;
-  }
-
-  if (items.length === 0) {
-    alertas.push({
-      severidade: "atencao",
-      codigo: "PAYLOAD_VAZIO",
-      mensagem: "O SICONFI retornou uma lista vazia para o período consultado.",
-    });
-    return alertas;
-  }
-
-  // 1) Campos obrigatórios presentes em pelo menos parte dos itens
-  const amostra = items.slice(0, 50);
-  const camposFaltantes = CAMPOS_OBRIGATORIOS.filter(
-    (c) => !amostra.some((it) => it[c] !== undefined && it[c] !== null),
-  );
-  if (camposFaltantes.length > 0) {
-    alertas.push({
-      severidade: "critico",
-      codigo: "CAMPOS_AUSENTES",
-      mensagem: `Campos esperados não encontrados em nenhum item da amostra: ${camposFaltantes.join(", ")}. O schema da API SICONFI pode ter mudado.`,
-      detalhe: { camposFaltantes, amostraTamanho: amostra.length },
-    });
-  }
-
-  // 2) Tipo de 'valor' deve ser numérico quando presente
-  const valoresInvalidos = amostra.filter(
-    (it) => it.valor !== undefined && it.valor !== null && typeof it.valor !== "number",
-  ).length;
-  if (valoresInvalidos > 0) {
-    alertas.push({
-      severidade: "critico",
-      codigo: "VALOR_TIPO_INESPERADO",
-      mensagem: `${valoresInvalidos} item(ns) na amostra possuem 'valor' em formato não numérico. Antes era sempre número.`,
-      detalhe: { valoresInvalidos, amostraTamanho: amostra.length },
-    });
-  }
-
-  // 3) Anexos esperados presentes
-  const anexosPresentes = new Set(items.map((i) => (i.anexo ?? "").trim()).filter(Boolean));
-  const anexosFaltando = ANEXOS_ESPERADOS.filter(
-    (esp) => ![...anexosPresentes].some((a) => a.includes(esp)),
-  );
-  if (anexosFaltando.length > 0) {
-    alertas.push({
-      severidade: "atencao",
-      codigo: "ANEXO_AUSENTE",
-      mensagem: `Anexos esperados não encontrados no payload: ${anexosFaltando.join(", ")}. Pode haver mudança na nomenclatura ou ausência de demonstrativo.`,
-      detalhe: { anexosPresentes: [...anexosPresentes], anexosFaltando },
-    });
-  }
-
-  // 4) Colunas esperadas no Anexo 01
-  const a01 = items.filter((i) => (i.anexo ?? "").includes("Anexo 01"));
-  if (a01.length > 0) {
-    const colunasA01 = new Set(a01.map((i) => (i.coluna ?? "").trim().toUpperCase()).filter(Boolean));
-    const colunasA01Faltando = COLUNAS_ESPERADAS_A01.filter(
-      (esp) => ![...colunasA01].some((c) => c.includes(esp.toUpperCase())),
-    );
-    if (colunasA01Faltando.length > 0) {
-      alertas.push({
-        severidade: "atencao",
-        codigo: "COLUNA_A01_AUSENTE",
-        mensagem: `Colunas esperadas no Anexo 01 (Balanço Orçamentário) não encontradas: ${colunasA01Faltando.join(" | ")}. O formato das colunas do RREO pode ter mudado.`,
-        detalhe: { colunasPresentes: [...colunasA01].slice(0, 20) },
-      });
-    }
-  }
-
-  // 5) Coluna esperada no Anexo 02
-  const a02 = items.filter((i) => (i.anexo ?? "").includes("Anexo 02"));
-  if (a02.length > 0) {
-    const temColunaEsperada = a02.some((i) =>
-      (i.coluna ?? "").toUpperCase().includes(COLUNA_ESPERADA_A02),
-    );
-    if (!temColunaEsperada) {
-      alertas.push({
-        severidade: "atencao",
-        codigo: "COLUNA_A02_AUSENTE",
-        mensagem: `Coluna '${COLUNA_ESPERADA_A02}' não encontrada no Anexo 02 (Despesa por Função).`,
-      });
-    }
-  }
-
-  // 6) Funções orçamentárias mapeadas — quais não vieram no payload?
-  if (a02.length > 0) {
-    const funcoesPresentes = new Set(
-      a02.map((i) => (i.conta ?? "").trim().toLowerCase()).filter(Boolean),
-    );
-    const funcoesFaltando = Object.keys(FUNCOES).filter((f) => !funcoesPresentes.has(f));
-    if (funcoesFaltando.length > 0) {
-      alertas.push({
-        severidade: "info",
-        codigo: "FUNCOES_AUSENTES",
-        mensagem: `Funções orçamentárias mapeadas não encontradas no payload: ${funcoesFaltando.join(", ")}. Pode ser ausência real (sem execução) ou mudança no nome da função.`,
-        detalhe: { funcoesFaltando, funcoesPresentesAmostra: [...funcoesPresentes].slice(0, 30) },
-      });
-    }
-  }
-
-  return alertas;
-}
-
-function formatarAlertasParaUsuario(alertas: AlertaPayload[]): string | null {
-  if (alertas.length === 0) return null;
-  const ordem: Record<AlertaSeveridade, number> = { critico: 0, atencao: 1, info: 2 };
-  const ordenados = [...alertas].sort((a, b) => ordem[a.severidade] - ordem[b.severidade]);
-  return ordenados
-    .map((a) => `[${a.severidade.toUpperCase()}] ${a.codigo}: ${a.mensagem}`)
-    .join(" | ");
-}
-
-/** Calcula bimestre/ano alvo: último bimestre fechado há ≥30 dias. */
-function calcularPeriodoAlvo(now = new Date()): { ano: number; bimestre: number; refDate: string } {
-  // Volta ~45 dias para garantir que o bimestre já foi publicado
+function getBimestreDisponivel(now = new Date()): { ano: number; bimestre: number } {
+  // Volta ~45 dias para garantir que o bimestre já foi publicado pelo STN
   const ref = new Date(now);
   ref.setDate(ref.getDate() - 45);
   const ano = ref.getFullYear();
-  const mes = ref.getMonth() + 1; // 1-12
-  const bimestre = Math.ceil(mes / 2); // 1-6
-  // referencia_data = último dia do bimestre
-  const ultimoMes = bimestre * 2;
-  const refDate = new Date(ano, ultimoMes, 0).toISOString().slice(0, 10);
-  return { ano, bimestre, refDate };
+  const mes = ref.getMonth() + 1;
+  const bimestre = Math.max(1, Math.min(6, Math.ceil(mes / 2)));
+  return { ano, bimestre };
 }
 
-async function fetchSiconfi(params: Record<string, string>, retries = 3): Promise<SiconfiResponse> {
-  const qs = new URLSearchParams(params).toString();
-  const url = `${SICONFI_BASE}?${qs}`;
+function getQuadrimestreDisponivel(now = new Date()): { ano: number; periodo: string } {
+  // RGF: 600000 (1° Jan-Abr), 600001 (2° Mai-Ago), 600002 (3° Set-Dez)
+  // Disponibilidade ~60 dias após fechamento
+  const mes = now.getMonth() + 1;
+  const ano = now.getFullYear();
+  if (mes >= 11) return { ano, periodo: "600001" };       // 2° quad fechado em ago
+  if (mes >= 7) return { ano, periodo: "600000" };        // 1° quad fechado em abr
+  return { ano: ano - 1, periodo: "600002" };             // 3° quad ano anterior
+}
+
+async function fetchSiconfi(path: string, params: Record<string, string>, retries = 3): Promise<any> {
+  const url = new URL(`${SICONFI_BASE}/${path}`);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json", "User-Agent": UA },
+      });
       if (res.status === 429) {
-        const wait = 2 ** attempt * 1000;
-        console.warn(`[siconfi] 429 rate-limited, aguardando ${wait}ms (tentativa ${attempt}/${retries})`);
-        await new Promise((r) => setTimeout(r, wait));
+        await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
         continue;
       }
-      if (!res.ok) throw new Error(`SICONFI HTTP ${res.status}: ${await res.text()}`);
-      return (await res.json()) as SiconfiResponse;
+      if (!res.ok) throw new Error(`${path} HTTP ${res.status}`);
+      return await res.json();
     } catch (e) {
       if (attempt === retries) throw e;
-      const wait = 2 ** attempt * 1000;
-      console.warn(`[siconfi] erro tentativa ${attempt}: ${e instanceof Error ? e.message : e}; retry em ${wait}ms`);
-      await new Promise((r) => setTimeout(r, wait));
+      await new Promise((r) => setTimeout(r, 2 ** attempt * 1000));
     }
   }
-  throw new Error("SICONFI: esgotadas tentativas");
+  throw new Error(`${path}: esgotadas tentativas`);
 }
 
-/**
- * Extrai KPIs do Anexo I (Balanço Orçamentário).
- * Conforme payload real do SICONFI, as colunas relevantes são:
- *   - "PREVISÃO ATUALIZADA (a)"   → receita prevista
- *   - "Até o Bimestre (c)"        → receita realizada acumulada
- *   - "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)" → despesa empenhada
- */
-function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: string) {
-  const kpis: Array<Record<string, unknown>> = [];
-  const a01 = items.filter((i) => (i.anexo ?? "").includes("Anexo 01"));
-
-  const find = (contaIncludes: string, colunaExact: string) =>
-    a01.find(
-      (i) =>
-        (i.conta ?? "").toUpperCase().includes(contaIncludes.toUpperCase()) &&
-        (i.coluna ?? "").trim().toUpperCase() === colunaExact.toUpperCase(),
-    );
-
-  const receitaPrevista = find("RECEITAS CORRENTES", "PREVISÃO ATUALIZADA (a)");
-  const receitaRealizada = find("RECEITAS CORRENTES", "Até o Bimestre (c)");
-  const despesaEmpenhada = a01.find(
-    (i) =>
-      (i.conta ?? "").toUpperCase().includes("DESPESAS CORRENTES") &&
-      (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
-  );
-
-  if (receitaRealizada?.valor != null) {
-    kpis.push({
-      tenant_id: tenantId,
-      secretaria_slug: "financas",
-      indicador: "Receita Corrente Realizada (acum. bimestre)",
-      valor: receitaRealizada.valor,
-      unidade: "R$",
-      referencia_data: refDate,
-      fonte: FONTE,
-      status: "ok",
-    });
-  }
-  if (despesaEmpenhada?.valor != null) {
-    kpis.push({
-      tenant_id: tenantId,
-      secretaria_slug: "financas",
-      indicador: "Despesa Corrente Empenhada (acum. bimestre)",
-      valor: despesaEmpenhada.valor,
-      unidade: "R$",
-      referencia_data: refDate,
-      fonte: FONTE,
-      status: "ok",
-    });
-  }
-  if (receitaRealizada?.valor && receitaPrevista?.valor) {
-    const pct = (receitaRealizada.valor / receitaPrevista.valor) * 100;
-    kpis.push({
-      tenant_id: tenantId,
-      secretaria_slug: "financas",
-      indicador: "Execução Orçamentária (Receita Realizada / Prevista)",
-      valor: Math.round(pct * 100) / 100,
-      unidade: "%",
-      referencia_data: refDate,
-      fonte: FONTE,
-      status: pct >= 90 ? "ok" : pct >= 70 ? "atencao" : "critico",
-    });
-  }
-  return kpis;
-}
-
-/**
- * Extrai KPIs por função orçamentária (Anexo II — Despesa por Função).
- * O campo `conta` contém o nome textual da função (ex: "Saúde", "Educação").
- * Coluna alvo: "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)".
- */
-function extrairKpisPorFuncao(items: SiconfiItem[], tenantId: string, refDate: string) {
-  const kpis: Array<Record<string, unknown>> = [];
-  const a02 = items.filter((i) => (i.anexo ?? "").includes("Anexo 02"));
-
-  for (const [funcKey, meta] of Object.entries(FUNCOES)) {
-    const item = a02.find(
-      (i) =>
-        (i.conta ?? "").trim().toLowerCase() === funcKey.toLowerCase() &&
-        (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
-    );
-    if (item?.valor != null) {
-      kpis.push({
-        tenant_id: tenantId,
-        secretaria_slug: meta.secretaria,
-        indicador: meta.nome,
-        valor: item.valor,
-        unidade: "R$",
-        referencia_data: refDate,
-        fonte: FONTE,
-        status: "ok",
-      });
-    }
-  }
-  return kpis;
+function num(v: any): number {
+  if (v == null) return 0;
+  const n = typeof v === "number" ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : 0;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  // Body opcional. Aceita:
-  //   { tenant_id?: string, exercicio?: number, bimestre?: 1..6 }
-  // - tenant_id: força um tenant específico (estado ou município que tenha id_ente IBGE em config).
-  //   Se omitido, resolve dinamicamente o Estado do Pará.
-  // - exercicio + bimestre: reprocessa um período exato. Se omitidos, usa fallback automático.
-  let body: { tenant_id?: string; exercicio?: number; bimestre?: number } = {};
-  if (req.method === "POST") {
-    try {
-      const txt = await req.text();
-      if (txt) body = JSON.parse(txt);
-    } catch {
-      // body inválido — segue com defaults
-    }
-  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Resolver tenant: se body.tenant_id fornecido, usa ele; senão Estado do Pará dinâmico.
-  let tenantRow: { id: string; nome: string; slug?: string; estado?: string; tipo?: string; ibge_codigo?: string | number | null } | null = null;
-  let tenantErr: { message: string } | null = null;
+  // Resolver tenant estadual do Pará
+  const { data: tenant } = await supabase
+    .from("tenants")
+    .select("id, nome")
+    .eq("tipo", "estado")
+    .eq("estado", "PA")
+    .maybeSingle();
 
-  if (body.tenant_id) {
-    const r = await supabase
-      .from("tenants")
-      .select("id, nome, slug, estado, tipo, ibge_codigo")
-      .eq("id", body.tenant_id)
-      .maybeSingle();
-    tenantRow = r.data;
-    tenantErr = r.error;
-  } else {
-    const r = await supabase
-      .from("tenants")
-      .select("id, nome, slug, estado, tipo, ibge_codigo")
-      .eq("tipo", "estado")
-      .or("estado.eq.PA,slug.ilike.%para%")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    tenantRow = r.data;
-    tenantErr = r.error;
+  if (!tenant) {
+    return new Response(
+      JSON.stringify({ erro: "Tenant estadual do Pará não encontrado" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 
-  if (tenantErr || !tenantRow?.id) {
-    const msg = tenantErr?.message ?? (body.tenant_id
-      ? `Tenant '${body.tenant_id}' não encontrado.`
-      : "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').");
-    console.error("[siconfi] resolução de tenant falhou:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const tenantId = tenantRow.id;
-  // id_ente IBGE: 15 = governo estadual PA. Para municípios, usa ibge_codigo do tenant.
-  // Para tenant estadual sem ibge_codigo definido, default 15 (PA).
-  const idEnte = tenantRow.tipo === "municipio" && tenantRow.ibge_codigo
-    ? String(tenantRow.ibge_codigo)
-    : String(tenantRow.ibge_codigo ?? "15");
-  console.log(`[siconfi] tenant resolvido: ${tenantRow.nome} (${tenantId}), tipo=${tenantRow.tipo}, id_ente=${idEnte}`);
-
-  // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
-  let integradorId: string | null = null;
-  {
-    const { data: existing } = await supabase
-      .from("integradores")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("tipo", "api_rest")
-      .eq("nome", INTEGRADOR_NOME)
-      .maybeSingle();
-
-    if (existing?.id) {
-      integradorId = existing.id;
-    } else {
-      const { data: novo, error: errIns } = await supabase
-        .from("integradores")
-        .insert({
-          tenant_id: tenantId,
-          secretaria_slug: "financas",
-          nome: INTEGRADOR_NOME,
-          descricao: "Sincronização automática RREO/SICONFI - Tesouro Nacional",
-          tipo: "api_rest",
-          status: "aguardando_configuracao",
-          endpoint: SICONFI_BASE,
-          config: { uf: "PA", demonstrativo: "RREO" },
-        })
-        .select("id")
-        .single();
-      if (errIns) {
-        console.error("[siconfi] falha ao criar integrador:", errIns);
-        return new Response(JSON.stringify({ error: errIns.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      integradorId = novo.id;
-    }
-  }
-
+  const tenantId = tenant.id as string;
   const inicio = Date.now();
-  const { data: log } = await supabase
-    .from("sync_logs")
-    .insert({ integrador_id: integradorId, tenant_id: tenantId, status: "em_andamento" })
-    .select("id")
-    .single();
-  const logId = log?.id ?? null;
+  const resultados: Record<string, any> = {};
+  const erros: string[] = [];
+  let kpisTotais = 0;
 
+  // ─── 1. RREO — Execução por função ──────────────────────────────────────
   try {
-    // Período: se body trouxer exercicio+bimestre, reprocessa esse período exato
-    // (sem fallback). Caso contrário, usa o último bimestre fechado e regride
-    // até 6 tentativas se vier vazio.
-    let ano = 0, bimestre = 0, refDate = "";
-    let items: SiconfiItem[] = [];
+    const { ano, bimestre } = getBimestreDisponivel();
+    console.log(`[siconfi] RREO ${ano}/${bimestre} PA`);
 
-    const periodoExplicito =
-      typeof body.exercicio === "number" &&
-      typeof body.bimestre === "number" &&
-      body.bimestre >= 1 && body.bimestre <= 6;
+    const data = await fetchSiconfi("rreo", {
+      an_exercicio: String(ano),
+      nr_periodo: String(bimestre),
+      co_tipo_demonstrativo: "RREO",
+      no_uf: "PA",
+      co_poder: "E",
+    });
 
-    if (periodoExplicito) {
-      const exer = body.exercicio!;
-      const bim = body.bimestre!;
-      console.log(`[siconfi] período explícito: exercício=${exer}, bimestre=${bim}`);
-      const resp = await fetchSiconfi({
-        an_exercicio: String(exer),
-        nr_periodo: String(bim),
-        co_tipo_demonstrativo: "RREO",
-        id_ente: idEnte,
-      });
-      if ((resp.items?.length ?? 0) === 0) {
-        throw new Error(
-          `SICONFI não retornou dados para id_ente=${idEnte}, exercício=${exer}, bimestre=${bim}. Verifique se o período já foi publicado pelo Tesouro.`,
-        );
-      }
-      items = resp.items!;
-      ano = exer;
-      bimestre = bim;
-      refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
-      console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
-    } else {
-      const alvo = calcularPeriodoAlvo();
-      let tentativaAno = alvo.ano;
-      let tentativaBim = alvo.bimestre;
+    const itens = data.items ?? data ?? [];
+    if (!Array.isArray(itens)) throw new Error("RREO: payload sem 'items'");
 
-      for (let i = 0; i < 6 && items.length === 0; i++) {
-        console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
-        const resp = await fetchSiconfi({
-          an_exercicio: String(tentativaAno),
-          nr_periodo: String(tentativaBim),
-          co_tipo_demonstrativo: "RREO",
-          id_ente: idEnte,
-        });
-        if ((resp.items?.length ?? 0) > 0) {
-          items = resp.items!;
-          ano = tentativaAno;
-          bimestre = tentativaBim;
-          refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
-          console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
-          break;
-        }
-        tentativaBim--;
-        if (tentativaBim < 1) {
-          tentativaBim = 6;
-          tentativaAno--;
-        }
-        await new Promise((r) => setTimeout(r, 1100));
-      }
+    // Agregar por função
+    const porFuncao: Record<string, { dotacao: number; empenhada: number; liquidada: number; paga: number }> = {};
+    for (const item of itens) {
+      const funcao = item.ds_funcao ?? item.no_funcao ?? item.conta;
+      if (!funcao) continue;
+      const slug = FUNCAO_PARA_SLUG[String(funcao).trim()];
+      if (!slug) continue;
 
-      if (items.length === 0) {
-        throw new Error(`SICONFI não retornou dados para id_ente=${idEnte} nos últimos 6 bimestres.`);
-      }
+      if (!porFuncao[slug]) porFuncao[slug] = { dotacao: 0, empenhada: 0, liquidada: 0, paga: 0 };
+      const f = porFuncao[slug];
+      f.dotacao += num(item.vl_dotacao_atualizada ?? item.vl_atualizado);
+      f.empenhada += num(item.vl_empenhado ?? item.vl_despesas_empenhadas);
+      f.liquidada += num(item.vl_liquidado ?? item.vl_despesas_liquidadas);
+      f.paga += num(item.vl_pago ?? item.vl_despesas_pagas);
     }
 
-    // Validação do payload — detecta mudanças no schema/formato do SICONFI
-    const alertas = validarPayloadSiconfi(items);
-    if (alertas.length > 0) {
-      console.warn(
-        `[siconfi] ${alertas.length} alerta(s) de payload detectado(s):`,
-        JSON.stringify(alertas, null, 2),
+    const refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+    const kpisRREO: any[] = [];
+
+    for (const [slug, dados] of Object.entries(porFuncao)) {
+      const execPct = dados.dotacao > 0 ? (dados.liquidada / dados.dotacao) * 100 : 0;
+
+      kpisRREO.push(
+        {
+          tenant_id: tenantId, secretaria_slug: slug,
+          indicador: "Execução orçamentária",
+          valor: Math.round(execPct * 100) / 100, unidade: "%",
+          status: execPct >= 70 ? "ok" : execPct >= 40 ? "atencao" : "critico",
+          referencia_data: refDate, fonte: "api:siconfi-rreo",
+        },
+        {
+          tenant_id: tenantId, secretaria_slug: slug,
+          indicador: "Dotação atualizada",
+          valor: dados.dotacao, unidade: "R$",
+          status: "ok", referencia_data: refDate, fonte: "api:siconfi-rreo",
+        },
+        {
+          tenant_id: tenantId, secretaria_slug: slug,
+          indicador: "Despesas liquidadas",
+          valor: dados.liquidada, unidade: "R$",
+          status: "ok", referencia_data: refDate, fonte: "api:siconfi-rreo",
+        },
       );
     }
-    const temAlertaCritico = alertas.some((a) => a.severidade === "critico");
 
-    const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
-    const kpisFuncao = extrairKpisPorFuncao(items, tenantId, refDate);
-    const todos = [...kpisBalanco, ...kpisFuncao];
-
-    let salvos = 0;
-    let ignorados = 0;
-    const falhas: Array<{
-      indicador: string;
-      secretaria_slug: string;
-      referencia_data: string;
-      valor: unknown;
-      erro_codigo?: string;
-      erro_mensagem: string;
-      erro_detalhe?: string;
-      erro_hint?: string;
-    }> = [];
-
-    console.log(`[siconfi] iniciando upsert de ${todos.length} KPIs (tenant=${tenantId}, ref=${refDate})`);
-
-    for (const kpi of todos) {
-      const ctx = {
-        indicador: kpi.indicador as string,
-        secretaria_slug: kpi.secretaria_slug as string,
-        referencia_data: kpi.referencia_data as string,
-        valor: kpi.valor,
-      };
-      const { error, data } = await supabase
+    if (kpisRREO.length > 0) {
+      const { error } = await supabase
         .from("kpis")
-        .upsert(kpi, { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" })
-        .select("id");
+        .upsert(kpisRREO, { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" });
+      if (error) throw new Error(`upsert RREO: ${error.message}`);
+      kpisTotais += kpisRREO.length;
+    }
 
-      if (error) {
-        const detalhe = {
-          ...ctx,
-          erro_codigo: (error as { code?: string }).code,
-          erro_mensagem: error.message,
-          erro_detalhe: (error as { details?: string }).details,
-          erro_hint: (error as { hint?: string }).hint,
-        };
-        console.error(`[siconfi] FALHA upsert [${ctx.secretaria_slug}/${ctx.indicador}]:`, JSON.stringify(detalhe));
-        falhas.push(detalhe);
-        ignorados++;
-      } else {
-        const rowId = Array.isArray(data) && data[0]?.id ? data[0].id : "?";
-        console.log(`[siconfi] OK upsert [${ctx.secretaria_slug}/${ctx.indicador}] valor=${ctx.valor} → id=${rowId}`);
-        salvos++;
+    resultados.rreo = {
+      bimestre: `${ano}/${bimestre}`,
+      secretarias: Object.keys(porFuncao),
+      kpis_salvos: kpisRREO.length,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    erros.push(`RREO: ${msg}`);
+    console.error("[siconfi] RREO erro:", msg);
+  }
+
+  await new Promise((r) => setTimeout(r, 1000));
+
+  // ─── 2. RGF — Pessoal e Dívida (LRF) ────────────────────────────────────
+  try {
+    const { ano, periodo } = getQuadrimestreDisponivel();
+    console.log(`[siconfi] RGF ${ano}/${periodo} PA`);
+
+    const data = await fetchSiconfi("rgf", {
+      an_exercicio: String(ano),
+      co_periodo: periodo,
+      no_uf: "PA",
+      co_poder: "E",
+    });
+
+    const itens = data.items ?? data ?? [];
+    let despesaPessoal = 0;
+    let rcl = 0;
+    let dividaConsolidada = 0;
+
+    for (const item of itens) {
+      const conta = String(item.ds_conta ?? item.no_conta ?? item.conta ?? "").toUpperCase();
+      const valor = num(item.vl_resultado ?? item.vl_ultimo_periodo ?? item.valor);
+
+      if (conta.includes("DESPESA TOTAL COM PESSOAL")) despesaPessoal = Math.max(despesaPessoal, valor);
+      else if (conta.includes("RECEITA CORRENTE LÍQUIDA") || conta.includes("RECEITA CORRENTE LIQUIDA")) {
+        rcl = Math.max(rcl, valor);
+      } else if (conta.includes("DÍVIDA CONSOLIDADA LÍQUIDA") || conta.includes("DIVIDA CONSOLIDADA LIQUIDA")) {
+        dividaConsolidada = Math.max(dividaConsolidada, valor);
       }
     }
 
-    console.log(`[siconfi] resumo upsert: total=${todos.length} salvos=${salvos} ignorados=${ignorados}`);
-    if (falhas.length > 0) {
-      console.error(`[siconfi] ${falhas.length} falha(s) detalhada(s):`, JSON.stringify(falhas, null, 2));
+    const pctPessoal = rcl > 0 ? (despesaPessoal / rcl) * 100 : 0;
+    const pctDivida = rcl > 0 ? (dividaConsolidada / rcl) * 100 : 0;
+    const mesRef = periodo === "600000" ? "04" : periodo === "600001" ? "08" : "12";
+    const refDate = `${ano}-${mesRef}-30`;
+
+    const kpisRGF: any[] = [];
+    if (pctPessoal > 0) {
+      kpisRGF.push({
+        tenant_id: tenantId, secretaria_slug: "sefa",
+        indicador: "Despesa pessoal — limite LRF",
+        valor: Math.round(pctPessoal * 100) / 100, unidade: "%",
+        status: pctPessoal >= 49 ? "critico" : pctPessoal >= 46 ? "atencao" : "ok",
+        referencia_data: refDate, fonte: "api:siconfi-rgf",
+      });
+    }
+    if (rcl > 0) {
+      kpisRGF.push({
+        tenant_id: tenantId, secretaria_slug: "sefa",
+        indicador: "Receita Corrente Líquida",
+        valor: rcl, unidade: "R$", status: "ok",
+        referencia_data: refDate, fonte: "api:siconfi-rgf",
+      });
+    }
+    if (pctDivida > 0) {
+      kpisRGF.push({
+        tenant_id: tenantId, secretaria_slug: "sefa",
+        indicador: "Dívida Consolidada / RCL",
+        valor: Math.round(pctDivida * 100) / 100, unidade: "%",
+        status: pctDivida >= 150 ? "critico" : pctDivida >= 100 ? "atencao" : "ok",
+        referencia_data: refDate, fonte: "api:siconfi-rgf",
+      });
     }
 
-    const resumoFalhas = falhas.length > 0
-      ? `${falhas.length}/${todos.length} KPIs falharam: ` +
-        falhas.slice(0, 3).map((f) => `[${f.secretaria_slug}/${f.indicador}] ${f.erro_codigo ?? ""} ${f.erro_mensagem}`).join(" | ") +
-        (falhas.length > 3 ? ` (+${falhas.length - 3} mais)` : "")
-      : null;
-    const resumoAlertas = formatarAlertasParaUsuario(alertas);
-    const resumoErro = [resumoFalhas, resumoAlertas].filter(Boolean).join(" || ") || null;
-
-    // Status final considera também alertas críticos do payload
-    const statusFinal = (() => {
-      if (ignorados > 0 && salvos === 0) return "erro";
-      if (temAlertaCritico) return "parcial";
-      if (ignorados > 0 || alertas.length > 0) return "parcial";
-      return "sucesso";
-    })();
-
-    if (logId) {
-      await supabase
-        .from("sync_logs")
-        .update({
-          concluido_at: new Date().toISOString(),
-          status: statusFinal,
-          registros_processados: todos.length,
-          registros_salvos: salvos,
-          registros_ignorados: ignorados,
-          erro_mensagem: resumoErro,
-          duracao_ms: Date.now() - inicio,
-        })
-        .eq("id", logId);
+    if (kpisRGF.length > 0) {
+      const { error } = await supabase
+        .from("kpis")
+        .upsert(kpisRGF, { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" });
+      if (error) throw new Error(`upsert RGF: ${error.message}`);
+      kpisTotais += kpisRGF.length;
     }
-    await supabase
-      .from("integradores")
-      .update({
-        status: ignorados > 0 && salvos === 0 ? "erro" : (temAlertaCritico ? "atencao" : "ativo"),
-        ultimo_sync: new Date().toISOString(),
-        ultimo_erro: resumoErro,
-        total_registros_importados: salvos,
-      })
-      .eq("id", integradorId);
 
-    return new Response(
-      JSON.stringify({
-        success: ignorados === 0 && !temAlertaCritico,
-        exercicio: ano,
-        bimestre,
-        referencia_data: refDate,
-        processados: todos.length,
-        salvos,
-        ignorados,
-        falhas, // detalhe completo de cada KPI que falhou
-        alertas, // alertas amigáveis sobre mudanças no payload do SICONFI
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[siconfi] erro fatal:", msg);
-    if (logId) {
-      await supabase
-        .from("sync_logs")
-        .update({
-          concluido_at: new Date().toISOString(),
-          status: "erro",
-          erro_mensagem: msg,
-          duracao_ms: Date.now() - inicio,
-        })
-        .eq("id", logId);
-    }
-    if (integradorId) {
-      await supabase
-        .from("integradores")
-        .update({ status: "erro", ultimo_erro: msg })
-        .eq("id", integradorId);
-    }
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    resultados.rgf = { periodo: `${ano}/${periodo}`, pct_pessoal: pctPessoal, rcl, pct_divida: pctDivida, kpis_salvos: kpisRGF.length };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    erros.push(`RGF: ${msg}`);
+    console.error("[siconfi] RGF erro:", msg);
   }
+
+  await new Promise((r) => setTimeout(r, 1000));
+
+  // ─── 3. FINBRA — Receita anual consolidada ──────────────────────────────
+  try {
+    const anoAnterior = new Date().getFullYear() - 1;
+    console.log(`[siconfi] FINBRA ${anoAnterior} PA`);
+
+    const data = await fetchSiconfi("finbra", {
+      an_exercicio: String(anoAnterior),
+      no_uf: "PA",
+      co_tipo_demonstrativo: "DCA",
+    });
+
+    const itens = data.items ?? data ?? [];
+    let receitaTotal = 0;
+    for (const item of itens) {
+      const conta = String(item.ds_conta ?? item.conta ?? "").toUpperCase();
+      if (conta.includes("RECEITA TOTAL") || conta.includes("RECEITAS CORRENTES")) {
+        receitaTotal = Math.max(receitaTotal, num(item.vl_resultado ?? item.valor));
+      }
+    }
+
+    if (receitaTotal > 0) {
+      const refDate = `${anoAnterior}-12-31`;
+      const { error } = await supabase.from("kpis").upsert(
+        [{
+          tenant_id: tenantId, secretaria_slug: "sefa",
+          indicador: "Receita total anual",
+          valor: receitaTotal, unidade: "R$", status: "ok",
+          referencia_data: refDate, fonte: "api:siconfi-finbra",
+        }],
+        { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" },
+      );
+      if (error) throw new Error(`upsert FINBRA: ${error.message}`);
+      kpisTotais += 1;
+    }
+
+    resultados.finbra = { ano: anoAnterior, receita_total: receitaTotal };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    erros.push(`FINBRA: ${msg}`);
+    console.error("[siconfi] FINBRA erro:", msg);
+  }
+
+  // ─── 4. Atualizar / criar integrador ────────────────────────────────────
+  const NOME_INTEGRADOR = "STN SICONFI — Execução Orçamentária e Fiscal";
+  const status = erros.length === 0 ? "ativo" : kpisTotais > 0 ? "ativo" : "erro";
+
+  const { data: integ } = await supabase
+    .from("integradores")
+    .select("id, total_registros_importados")
+    .eq("tenant_id", tenantId)
+    .eq("nome", NOME_INTEGRADOR)
+    .maybeSingle();
+
+  let integradorId: string | null = integ?.id ?? null;
+  if (integ) {
+    await supabase.from("integradores").update({
+      status,
+      ultimo_sync: new Date().toISOString(),
+      ultimo_erro: erros.length > 0 ? erros.join(" | ").slice(0, 1000) : null,
+      total_registros_importados: (integ.total_registros_importados ?? 0) + kpisTotais,
+    }).eq("id", integ.id);
+  } else {
+    const { data: novo } = await supabase.from("integradores").insert({
+      tenant_id: tenantId,
+      secretaria_slug: "sefa",
+      nome: NOME_INTEGRADOR,
+      descricao: "API pública do Tesouro Nacional — RREO, RGF e FINBRA do Estado do Pará",
+      tipo: "api_rest",
+      endpoint: SICONFI_BASE,
+      config: { no_uf: "PA", co_poder: "E", fontes: ["rreo", "rgf", "finbra"] },
+      status,
+      ultimo_sync: new Date().toISOString(),
+      ultimo_erro: erros.length > 0 ? erros.join(" | ").slice(0, 1000) : null,
+      total_registros_importados: kpisTotais,
+    }).select("id").single();
+    integradorId = novo?.id ?? null;
+  }
+
+  // ─── 5. Log de sincronização ────────────────────────────────────────────
+  const duracao = Date.now() - inicio;
+  const logStatus = erros.length === 0 ? "sucesso" : kpisTotais > 0 ? "parcial" : "erro";
+  await supabase.from("sync_logs").insert({
+    tenant_id: tenantId,
+    integrador_id: integradorId,
+    iniciado_at: new Date(inicio).toISOString(),
+    concluido_at: new Date().toISOString(),
+    status: logStatus,
+    registros_salvos: kpisTotais,
+    duracao_ms: duracao,
+    erro_mensagem: erros.length > 0 ? erros.join(" | ").slice(0, 2000) : null,
+    erro_detalhes: erros.length > 0 ? { erros, resultados } : null,
+  });
+
+  return new Response(
+    JSON.stringify({ resultados, erros, kpis_salvos: kpisTotais, duracao_ms: duracao }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+  );
 });
