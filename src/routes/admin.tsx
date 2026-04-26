@@ -62,6 +62,9 @@ function AdminPanel() {
           <TabsTrigger value="auditoria" className="gap-2">
             <Activity className="h-4 w-4" /> Auditoria
           </TabsTrigger>
+          <TabsTrigger value="integracoes" className="gap-2">
+            <Plug className="h-4 w-4" /> Integrações
+          </TabsTrigger>
           <TabsTrigger value="config" className="gap-2">
             <Sliders className="h-4 w-4" /> Configurações
           </TabsTrigger>
