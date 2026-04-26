@@ -305,19 +305,31 @@ export function IntegracoesManager() {
                     {i.total_registros_importados}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
-                      onClick={() => void executar(i)}
-                    >
-                      {running === i.id ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Play className="mr-2 h-3 w-3" />
-                      )}
-                      Executar
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
+                        onClick={() => void executar(i)}
+                      >
+                        {running === i.id ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Play className="mr-2 h-3 w-3" />
+                        )}
+                        Executar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
+                        onClick={() => abrirReproc(i)}
+                        title="Reprocessar período específico"
+                      >
+                        <RotateCcw className="mr-2 h-3 w-3" />
+                        Reprocessar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
