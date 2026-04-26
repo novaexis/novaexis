@@ -10,7 +10,7 @@
  * Rate limit: ~1 req/s entre chamadas
  *
  * Indicadores extraídos (todos vinculados ao tenant do Estado do Pará,
- * passado em PARA_STATE_TENANT_ID):
+ * resolvido dinamicamente da tabela `tenants` via tipo='estado' + estado='PA'):
  *   - Receita Realizada (R$)                 — secretaria 'financas'
  *   - Despesa Empenhada (R$)                 — secretaria 'financas'
  *   - Execução Orçamentária (%)              — secretaria 'financas'
@@ -33,24 +33,28 @@ const SICONFI_BASE = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo";
 const INTEGRADOR_NOME = "sync-siconfi";
 const FONTE = "api:siconfi";
 
-// Mapeamento: código de função orçamentária -> (indicador, secretaria_slug)
-const FUNCOES = {
-  "10": { nome: "Despesa Empenhada - Saúde", secretaria: "saude" },
-  "12": { nome: "Despesa Empenhada - Educação", secretaria: "educacao" },
-  "06": { nome: "Despesa Empenhada - Segurança Pública", secretaria: "seguranca" },
-  "15": { nome: "Despesa Empenhada - Urbanismo/Infraestrutura", secretaria: "infraestrutura" },
-  "08": { nome: "Despesa Empenhada - Assistência Social", secretaria: "assistencia" },
-} as const;
+// Mapeamento: nome da função orçamentária (campo "conta" do Anexo 02)
+// -> (indicador legível, secretaria_slug). Comparação case-insensitive exata.
+const FUNCOES: Record<string, { nome: string; secretaria: string }> = {
+  "saúde": { nome: "Despesa Empenhada - Saúde", secretaria: "saude" },
+  "educação": { nome: "Despesa Empenhada - Educação", secretaria: "educacao" },
+  "segurança pública": { nome: "Despesa Empenhada - Segurança Pública", secretaria: "seguranca" },
+  "urbanismo": { nome: "Despesa Empenhada - Urbanismo", secretaria: "infraestrutura" },
+  "saneamento": { nome: "Despesa Empenhada - Saneamento", secretaria: "infraestrutura" },
+  "transporte": { nome: "Despesa Empenhada - Transporte", secretaria: "infraestrutura" },
+  "assistência social": { nome: "Despesa Empenhada - Assistência Social", secretaria: "assistencia" },
+};
 
 interface SiconfiItem {
   cod_conta?: string;
   conta?: string;
   coluna?: string;
   valor?: number;
-  cod_ibge?: string;
+  cod_ibge?: number | string;
   exercicio?: number;
   periodo?: number;
   populacao?: number;
+  anexo?: string;
 }
 
 interface SiconfiResponse {
@@ -99,30 +103,36 @@ async function fetchSiconfi(params: Record<string, string>, retries = 3): Promis
 }
 
 /**
- * Extrai KPIs do payload RREO (Anexo I — Balanço Orçamentário).
- * O SICONFI retorna várias linhas; pegamos:
- *  - "RECEITAS CORRENTES" coluna "RECEITAS REALIZADAS"
- *  - "DESPESAS CORRENTES" coluna "DESPESAS EMPENHADAS"
+ * Extrai KPIs do Anexo I (Balanço Orçamentário).
+ * Conforme payload real do SICONFI, as colunas relevantes são:
+ *   - "PREVISÃO ATUALIZADA (a)"   → receita prevista
+ *   - "Até o Bimestre (c)"        → receita realizada acumulada
+ *   - "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)" → despesa empenhada
  */
 function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: string) {
   const kpis: Array<Record<string, unknown>> = [];
+  const a01 = items.filter((i) => (i.anexo ?? "").includes("Anexo 01"));
 
-  const findItem = (contaIncludes: string, colunaIncludes: string) =>
-    items.find(
+  const find = (contaIncludes: string, colunaExact: string) =>
+    a01.find(
       (i) =>
         (i.conta ?? "").toUpperCase().includes(contaIncludes.toUpperCase()) &&
-        (i.coluna ?? "").toUpperCase().includes(colunaIncludes.toUpperCase()),
+        (i.coluna ?? "").trim().toUpperCase() === colunaExact.toUpperCase(),
     );
 
-  const receitaRealizada = findItem("RECEITAS CORRENTES", "REALIZADAS");
-  const receitaPrevista = findItem("RECEITAS CORRENTES", "PREVIS");
-  const despesaEmpenhada = findItem("DESPESAS CORRENTES", "EMPENHADAS");
+  const receitaPrevista = find("RECEITAS CORRENTES", "PREVISÃO ATUALIZADA (a)");
+  const receitaRealizada = find("RECEITAS CORRENTES", "Até o Bimestre (c)");
+  const despesaEmpenhada = a01.find(
+    (i) =>
+      (i.conta ?? "").toUpperCase().includes("DESPESAS CORRENTES") &&
+      (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
+  );
 
   if (receitaRealizada?.valor != null) {
     kpis.push({
       tenant_id: tenantId,
       secretaria_slug: "financas",
-      indicador: "Receita Corrente Realizada",
+      indicador: "Receita Corrente Realizada (acum. bimestre)",
       valor: receitaRealizada.valor,
       unidade: "R$",
       referencia_data: refDate,
@@ -134,7 +144,7 @@ function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: str
     kpis.push({
       tenant_id: tenantId,
       secretaria_slug: "financas",
-      indicador: "Despesa Corrente Empenhada",
+      indicador: "Despesa Corrente Empenhada (acum. bimestre)",
       valor: despesaEmpenhada.valor,
       unidade: "R$",
       referencia_data: refDate,
@@ -159,17 +169,19 @@ function extrairKpisBalanco(items: SiconfiItem[], tenantId: string, refDate: str
 }
 
 /**
- * Extrai KPIs por função orçamentária (RREO Anexo II — Despesa por Função).
- * Cada item traz cod_conta = código da função (ex: "10").
+ * Extrai KPIs por função orçamentária (Anexo II — Despesa por Função).
+ * O campo `conta` contém o nome textual da função (ex: "Saúde", "Educação").
+ * Coluna alvo: "DESPESAS EMPENHADAS ATÉ O BIMESTRE (b)".
  */
 function extrairKpisPorFuncao(items: SiconfiItem[], tenantId: string, refDate: string) {
   const kpis: Array<Record<string, unknown>> = [];
-  for (const [codigo, meta] of Object.entries(FUNCOES)) {
-    // Procura linha cuja conta inicia com o código + " " e coluna de empenhadas
-    const item = items.find(
+  const a02 = items.filter((i) => (i.anexo ?? "").includes("Anexo 02"));
+
+  for (const [funcKey, meta] of Object.entries(FUNCOES)) {
+    const item = a02.find(
       (i) =>
-        (i.cod_conta === codigo || (i.conta ?? "").trim().startsWith(codigo)) &&
-        (i.coluna ?? "").toUpperCase().includes("EMPENHADAS"),
+        (i.conta ?? "").trim().toLowerCase() === funcKey.toLowerCase() &&
+        (i.coluna ?? "").toUpperCase().includes("EMPENHADAS ATÉ O BIMESTRE"),
     );
     if (item?.valor != null) {
       kpis.push({
@@ -195,13 +207,29 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const tenantId = Deno.env.get("PARA_STATE_TENANT_ID");
-  if (!tenantId) {
-    return new Response(
-      JSON.stringify({ error: "PARA_STATE_TENANT_ID não configurado" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+  // Resolver tenant do Estado do Pará dinamicamente.
+  // Critério: tipo='estado' E (estado='PA' OU slug ILIKE '%para%').
+  // Mais robusto do que depender de um secret estático — funciona mesmo se o
+  // tenant for renomeado/recriado.
+  const { data: tenantRow, error: tenantErr } = await supabase
+    .from("tenants")
+    .select("id, nome, slug, estado")
+    .eq("tipo", "estado")
+    .or("estado.eq.PA,slug.ilike.%para%")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (tenantErr || !tenantRow?.id) {
+    const msg = tenantErr?.message ?? "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').";
+    console.error("[siconfi] resolução de tenant falhou:", msg);
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+  const tenantId = tenantRow.id;
+  console.log(`[siconfi] tenant estadual resolvido: ${tenantRow.nome} (${tenantId})`);
 
   // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
   let integradorId: string | null = null;
@@ -210,7 +238,7 @@ Deno.serve(async (req) => {
       .from("integradores")
       .select("id")
       .eq("tenant_id", tenantId)
-      .eq("tipo", "sync_externo")
+      .eq("tipo", "api_rest")
       .eq("nome", INTEGRADOR_NOME)
       .maybeSingle();
 
@@ -224,8 +252,8 @@ Deno.serve(async (req) => {
           secretaria_slug: "financas",
           nome: INTEGRADOR_NOME,
           descricao: "Sincronização automática RREO/SICONFI - Tesouro Nacional",
-          tipo: "sync_externo",
-          status: "em_execucao",
+          tipo: "api_rest",
+          status: "aguardando_configuracao",
           endpoint: SICONFI_BASE,
           config: { uf: "PA", demonstrativo: "RREO" },
         })
@@ -251,30 +279,47 @@ Deno.serve(async (req) => {
   const logId = log?.id ?? null;
 
   try {
-    const { ano, bimestre, refDate } = calcularPeriodoAlvo();
-    console.log(`[siconfi] sincronizando RREO Pará — exercício=${ano}, bimestre=${bimestre}, refDate=${refDate}`);
+    // Tenta primeiro o período-alvo (recente). Se vier vazio (dados ainda não
+    // publicados pelo Tesouro), faz fallback regredindo bimestres até achar
+    // dados ou esgotar 6 tentativas (~1 ano).
+    let ano = 0, bimestre = 0, refDate = "";
+    let items: SiconfiItem[] = [];
+    const alvo = calcularPeriodoAlvo();
+    let tentativaAno = alvo.ano;
+    let tentativaBim = alvo.bimestre;
 
-    // 1) Anexo I — Balanço Orçamentário
-    const balanco = await fetchSiconfi({
-      an_exercicio: String(ano),
-      nr_periodo: String(bimestre),
-      co_tipo_demonstrativo: "RREO",
-      no_anexo: "RREO-Anexo 01",
-      id_ente: "15", // UF Pará (governo estadual)
-    });
-    await new Promise((r) => setTimeout(r, 1100));
+    for (let i = 0; i < 6 && items.length === 0; i++) {
+      console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+      const resp = await fetchSiconfi({
+        an_exercicio: String(tentativaAno),
+        nr_periodo: String(tentativaBim),
+        co_tipo_demonstrativo: "RREO",
+        id_ente: "15", // UF Pará (governo estadual)
+      });
+      if ((resp.items?.length ?? 0) > 0) {
+        items = resp.items!;
+        ano = tentativaAno;
+        bimestre = tentativaBim;
+        // referencia_data = último dia do bimestre encontrado
+        refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+        console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+        break;
+      }
+      // Regride 1 bimestre
+      tentativaBim--;
+      if (tentativaBim < 1) {
+        tentativaBim = 6;
+        tentativaAno--;
+      }
+      await new Promise((r) => setTimeout(r, 1100));
+    }
 
-    // 2) Anexo II — Despesa por Função
-    const porFuncao = await fetchSiconfi({
-      an_exercicio: String(ano),
-      nr_periodo: String(bimestre),
-      co_tipo_demonstrativo: "RREO",
-      no_anexo: "RREO-Anexo 02",
-      id_ente: "15",
-    });
+    if (items.length === 0) {
+      throw new Error("SICONFI não retornou dados para o Pará nos últimos 6 bimestres.");
+    }
 
-    const kpisBalanco = extrairKpisBalanco(balanco.items ?? [], tenantId, refDate);
-    const kpisFuncao = extrairKpisPorFuncao(porFuncao.items ?? [], tenantId, refDate);
+    const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
+    const kpisFuncao = extrairKpisPorFuncao(items, tenantId, refDate);
     const todos = [...kpisBalanco, ...kpisFuncao];
 
     let salvos = 0;
