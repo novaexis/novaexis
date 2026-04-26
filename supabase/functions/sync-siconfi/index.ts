@@ -582,18 +582,28 @@ Deno.serve(async (req) => {
       console.error(`[siconfi] ${falhas.length} falha(s) detalhada(s):`, JSON.stringify(falhas, null, 2));
     }
 
-    const resumoErro = falhas.length > 0
+    const resumoFalhas = falhas.length > 0
       ? `${falhas.length}/${todos.length} KPIs falharam: ` +
         falhas.slice(0, 3).map((f) => `[${f.secretaria_slug}/${f.indicador}] ${f.erro_codigo ?? ""} ${f.erro_mensagem}`).join(" | ") +
         (falhas.length > 3 ? ` (+${falhas.length - 3} mais)` : "")
       : null;
+    const resumoAlertas = formatarAlertasParaUsuario(alertas);
+    const resumoErro = [resumoFalhas, resumoAlertas].filter(Boolean).join(" || ") || null;
+
+    // Status final considera também alertas críticos do payload
+    const statusFinal = (() => {
+      if (ignorados > 0 && salvos === 0) return "erro";
+      if (temAlertaCritico) return "parcial";
+      if (ignorados > 0 || alertas.length > 0) return "parcial";
+      return "sucesso";
+    })();
 
     if (logId) {
       await supabase
         .from("sync_logs")
         .update({
           concluido_at: new Date().toISOString(),
-          status: ignorados > 0 && salvos === 0 ? "erro" : (ignorados > 0 ? "parcial" : "sucesso"),
+          status: statusFinal,
           registros_processados: todos.length,
           registros_salvos: salvos,
           registros_ignorados: ignorados,
@@ -605,7 +615,7 @@ Deno.serve(async (req) => {
     await supabase
       .from("integradores")
       .update({
-        status: ignorados > 0 && salvos === 0 ? "erro" : "ativo",
+        status: ignorados > 0 && salvos === 0 ? "erro" : (temAlertaCritico ? "atencao" : "ativo"),
         ultimo_sync: new Date().toISOString(),
         ultimo_erro: resumoErro,
         total_registros_importados: salvos,
@@ -614,7 +624,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: ignorados === 0,
+        success: ignorados === 0 && !temAlertaCritico,
         exercicio: ano,
         bimestre,
         referencia_data: refDate,
@@ -622,6 +632,7 @@ Deno.serve(async (req) => {
         salvos,
         ignorados,
         falhas, // detalhe completo de cada KPI que falhou
+        alertas, // alertas amigáveis sobre mudanças no payload do SICONFI
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
