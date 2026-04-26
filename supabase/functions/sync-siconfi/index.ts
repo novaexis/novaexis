@@ -223,13 +223,13 @@ Deno.serve(async (req) => {
   );
 
   // Resolver tenant: se body.tenant_id fornecido, usa ele; senão Estado do Pará dinâmico.
-  let tenantRow: { id: string; nome: string; slug?: string; estado?: string; tipo?: string; config?: Record<string, unknown> } | null = null;
+  let tenantRow: { id: string; nome: string; slug?: string; estado?: string; tipo?: string; ibge_codigo?: string | number | null } | null = null;
   let tenantErr: { message: string } | null = null;
 
   if (body.tenant_id) {
     const r = await supabase
       .from("tenants")
-      .select("id, nome, slug, estado, tipo, config")
+      .select("id, nome, slug, estado, tipo, ibge_codigo")
       .eq("id", body.tenant_id)
       .maybeSingle();
     tenantRow = r.data;
@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
   } else {
     const r = await supabase
       .from("tenants")
-      .select("id, nome, slug, estado, tipo, config")
+      .select("id, nome, slug, estado, tipo, ibge_codigo")
       .eq("tipo", "estado")
       .or("estado.eq.PA,slug.ilike.%para%")
       .order("created_at", { ascending: true })
@@ -258,11 +258,12 @@ Deno.serve(async (req) => {
     });
   }
   const tenantId = tenantRow.id;
-  // id_ente IBGE: 15 = governo estadual PA. Para municípios, ler de tenants.config.id_ente_ibge.
-  const idEnte = String(
-    (tenantRow.config as { id_ente_ibge?: string | number } | undefined)?.id_ente_ibge ?? "15",
-  );
-  console.log(`[siconfi] tenant resolvido: ${tenantRow.nome} (${tenantId}), id_ente=${idEnte}`);
+  // id_ente IBGE: 15 = governo estadual PA. Para municípios, usa ibge_codigo do tenant.
+  // Para tenant estadual sem ibge_codigo definido, default 15 (PA).
+  const idEnte = tenantRow.tipo === "municipio" && tenantRow.ibge_codigo
+    ? String(tenantRow.ibge_codigo)
+    : String(tenantRow.ibge_codigo ?? "15");
+  console.log(`[siconfi] tenant resolvido: ${tenantRow.nome} (${tenantId}), tipo=${tenantRow.tipo}, id_ente=${idEnte}`);
 
   // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
   let integradorId: string | null = null;
