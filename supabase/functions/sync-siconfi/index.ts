@@ -33,14 +33,17 @@ const SICONFI_BASE = "https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo";
 const INTEGRADOR_NOME = "sync-siconfi";
 const FONTE = "api:siconfi";
 
-// Mapeamento: código de função orçamentária -> (indicador, secretaria_slug)
-const FUNCOES = {
-  "10": { nome: "Despesa Empenhada - Saúde", secretaria: "saude" },
-  "12": { nome: "Despesa Empenhada - Educação", secretaria: "educacao" },
-  "06": { nome: "Despesa Empenhada - Segurança Pública", secretaria: "seguranca" },
-  "15": { nome: "Despesa Empenhada - Urbanismo/Infraestrutura", secretaria: "infraestrutura" },
-  "08": { nome: "Despesa Empenhada - Assistência Social", secretaria: "assistencia" },
-} as const;
+// Mapeamento: nome da função orçamentária (campo "conta" do Anexo 02)
+// -> (indicador legível, secretaria_slug). Comparação case-insensitive exata.
+const FUNCOES: Record<string, { nome: string; secretaria: string }> = {
+  "saúde": { nome: "Despesa Empenhada - Saúde", secretaria: "saude" },
+  "educação": { nome: "Despesa Empenhada - Educação", secretaria: "educacao" },
+  "segurança pública": { nome: "Despesa Empenhada - Segurança Pública", secretaria: "seguranca" },
+  "urbanismo": { nome: "Despesa Empenhada - Urbanismo", secretaria: "infraestrutura" },
+  "saneamento": { nome: "Despesa Empenhada - Saneamento", secretaria: "infraestrutura" },
+  "transporte": { nome: "Despesa Empenhada - Transporte", secretaria: "infraestrutura" },
+  "assistência social": { nome: "Despesa Empenhada - Assistência Social", secretaria: "assistencia" },
+};
 
 interface SiconfiItem {
   cod_conta?: string;
