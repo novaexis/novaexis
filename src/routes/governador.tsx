@@ -144,6 +144,10 @@ function GovernadorDashboard() {
           </p>
         </div>
         <nav className="flex flex-wrap gap-2">
+          <Button onClick={sincronizarAgora} disabled={sincronizando} variant="outline" size="sm">
+            {sincronizando ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-2 h-3.5 w-3.5" />}
+            {sincronizando ? "Sincronizando..." : "Sincronizar dados reais"}
+          </Button>
           <Link to="/governador/comunicados">
             <button className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm font-medium transition hover:bg-muted">
               <Megaphone className="h-3.5 w-3.5" />
@@ -172,6 +176,7 @@ function GovernadorDashboard() {
                 unidade={kpi?.unidade ?? undefined}
                 variacaoPct={kpi?.variacao_pct ?? null}
                 status={kpi?.status ?? "ok"}
+                fonte={kpi?.fonte ?? undefined}
                 icon={<Icon className="h-5 w-5" />}
                 onClick={() =>
                   navigate({
