@@ -14,7 +14,7 @@ const corsHeaders = {
 
 const FUNCOES = [
   { nome: "sync-siconfi-municipal", descricao: "SICONFI — Finanças municipais", delay: 2000 },
-  // { nome: "sync-saude-municipal", descricao: "CNES + SIOPS — Saúde", delay: 2000 },
+  { nome: "sync-saude-municipal", descricao: "CNES — Saúde municipal", delay: 2000 },
   // { nome: "sync-educacao-municipal", descricao: "FNDE — Educação", delay: 2000 },
   // { nome: "sync-assistencia-municipal", descricao: "Portal Transparência — Assistência", delay: 2000 },
 ];
