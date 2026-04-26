@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
       .from("integradores")
       .select("id")
       .eq("tenant_id", tenantId)
-      .eq("tipo", "sync_externo")
+      .eq("tipo", "api_rest")
       .eq("nome", INTEGRADOR_NOME)
       .maybeSingle();
 
