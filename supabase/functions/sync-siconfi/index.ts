@@ -324,27 +324,70 @@ Deno.serve(async (req) => {
 
     let salvos = 0;
     let ignorados = 0;
+    const falhas: Array<{
+      indicador: string;
+      secretaria_slug: string;
+      referencia_data: string;
+      valor: unknown;
+      erro_codigo?: string;
+      erro_mensagem: string;
+      erro_detalhe?: string;
+      erro_hint?: string;
+    }> = [];
+
+    console.log(`[siconfi] iniciando upsert de ${todos.length} KPIs (tenant=${tenantId}, ref=${refDate})`);
+
     for (const kpi of todos) {
-      const { error } = await supabase
+      const ctx = {
+        indicador: kpi.indicador as string,
+        secretaria_slug: kpi.secretaria_slug as string,
+        referencia_data: kpi.referencia_data as string,
+        valor: kpi.valor,
+      };
+      const { error, data } = await supabase
         .from("kpis")
-        .upsert(kpi, { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" });
+        .upsert(kpi, { onConflict: "tenant_id,indicador,referencia_data,secretaria_slug" })
+        .select("id");
+
       if (error) {
-        console.error("[siconfi] upsert error:", error.message, kpi);
+        const detalhe = {
+          ...ctx,
+          erro_codigo: (error as { code?: string }).code,
+          erro_mensagem: error.message,
+          erro_detalhe: (error as { details?: string }).details,
+          erro_hint: (error as { hint?: string }).hint,
+        };
+        console.error(`[siconfi] FALHA upsert [${ctx.secretaria_slug}/${ctx.indicador}]:`, JSON.stringify(detalhe));
+        falhas.push(detalhe);
         ignorados++;
       } else {
+        const rowId = Array.isArray(data) && data[0]?.id ? data[0].id : "?";
+        console.log(`[siconfi] OK upsert [${ctx.secretaria_slug}/${ctx.indicador}] valor=${ctx.valor} → id=${rowId}`);
         salvos++;
       }
     }
+
+    console.log(`[siconfi] resumo upsert: total=${todos.length} salvos=${salvos} ignorados=${ignorados}`);
+    if (falhas.length > 0) {
+      console.error(`[siconfi] ${falhas.length} falha(s) detalhada(s):`, JSON.stringify(falhas, null, 2));
+    }
+
+    const resumoErro = falhas.length > 0
+      ? `${falhas.length}/${todos.length} KPIs falharam: ` +
+        falhas.slice(0, 3).map((f) => `[${f.secretaria_slug}/${f.indicador}] ${f.erro_codigo ?? ""} ${f.erro_mensagem}`).join(" | ") +
+        (falhas.length > 3 ? ` (+${falhas.length - 3} mais)` : "")
+      : null;
 
     if (logId) {
       await supabase
         .from("sync_logs")
         .update({
           concluido_at: new Date().toISOString(),
-          status: ignorados > 0 && salvos === 0 ? "erro" : "sucesso",
+          status: ignorados > 0 && salvos === 0 ? "erro" : (ignorados > 0 ? "parcial" : "sucesso"),
           registros_processados: todos.length,
           registros_salvos: salvos,
           registros_ignorados: ignorados,
+          erro_mensagem: resumoErro,
           duracao_ms: Date.now() - inicio,
         })
         .eq("id", logId);
@@ -352,22 +395,23 @@ Deno.serve(async (req) => {
     await supabase
       .from("integradores")
       .update({
-        status: "ativo",
+        status: ignorados > 0 && salvos === 0 ? "erro" : "ativo",
         ultimo_sync: new Date().toISOString(),
-        ultimo_erro: null,
+        ultimo_erro: resumoErro,
         total_registros_importados: salvos,
       })
       .eq("id", integradorId);
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: ignorados === 0,
         exercicio: ano,
         bimestre,
         referencia_data: refDate,
         processados: todos.length,
         salvos,
         ignorados,
+        falhas, // detalhe completo de cada KPI que falhou
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
