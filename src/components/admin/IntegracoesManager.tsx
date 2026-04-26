@@ -14,9 +14,20 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -26,6 +37,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
 type Integrador = {
@@ -101,12 +113,22 @@ function formatDuracao(ms: number | null) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+type TenantOption = { id: string; nome: string; tipo: string };
+
 export function IntegracoesManager() {
   const [integradores, setIntegradores] = useState<Integrador[]>([]);
   const [logs, setLogs] = useState<SyncLog[]>([]);
+  const [tenantsList, setTenantsList] = useState<TenantOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [logDetalhe, setLogDetalhe] = useState<SyncLog | null>(null);
+
+  // Diálogo de reprocessamento
+  const [reprocOpen, setReprocOpen] = useState(false);
+  const [reprocIntegrador, setReprocIntegrador] = useState<Integrador | null>(null);
+  const [reprocTenantId, setReprocTenantId] = useState<string>("");
+  const [reprocAno, setReprocAno] = useState<string>(String(new Date().getFullYear()));
+  const [reprocBimestre, setReprocBimestre] = useState<string>("1");
 
   useEffect(() => {
     void load();
@@ -115,7 +137,7 @@ export function IntegracoesManager() {
   async function load() {
     setLoading(true);
     try {
-      const [intRes, logRes] = await Promise.all([
+      const [intRes, logRes, tenRes] = await Promise.all([
         supabase
           .from("integradores")
           .select("*, tenants(nome)")
@@ -125,9 +147,14 @@ export function IntegracoesManager() {
           .select("*")
           .order("iniciado_at", { ascending: false })
           .limit(50),
+        supabase
+          .from("tenants")
+          .select("id, nome, tipo")
+          .order("nome", { ascending: true }),
       ]);
       if (intRes.error) throw intRes.error;
       if (logRes.error) throw logRes.error;
+      if (tenRes.error) throw tenRes.error;
       setIntegradores(
         (intRes.data ?? []).map((i: Integrador & { tenants?: { nome: string } | null }) => ({
           ...i,
@@ -135,6 +162,7 @@ export function IntegracoesManager() {
         })),
       );
       setLogs(logRes.data ?? []);
+      setTenantsList(tenRes.data ?? []);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao carregar integrações");
     } finally {
@@ -159,6 +187,55 @@ export function IntegracoesManager() {
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : `Falha ao executar ${integrador.nome}`);
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  function abrirReproc(integrador: Integrador) {
+    setReprocIntegrador(integrador);
+    setReprocTenantId(integrador.tenant_id);
+    setReprocAno(String(new Date().getFullYear()));
+    setReprocBimestre("1");
+    setReprocOpen(true);
+  }
+
+  async function executarReproc() {
+    if (!reprocIntegrador) return;
+    const funcao = FUNCAO_POR_NOME[reprocIntegrador.nome];
+    if (!funcao) {
+      toast.error(`Sem edge function mapeada para "${reprocIntegrador.nome}"`);
+      return;
+    }
+    const ano = Number(reprocAno);
+    const bimestre = Number(reprocBimestre);
+    if (!Number.isInteger(ano) || ano < 2000 || ano > 2100) {
+      toast.error("Ano inválido (use entre 2000 e 2100).");
+      return;
+    }
+    if (!Number.isInteger(bimestre) || bimestre < 1 || bimestre > 6) {
+      toast.error("Bimestre inválido (1 a 6).");
+      return;
+    }
+    if (!reprocTenantId) {
+      toast.error("Selecione um tenant.");
+      return;
+    }
+
+    setRunning(reprocIntegrador.id);
+    try {
+      const { data, error } = await supabase.functions.invoke(funcao, {
+        body: { tenant_id: reprocTenantId, exercicio: ano, bimestre },
+      });
+      if (error) throw error;
+      const d = data as { salvos?: number; ignorados?: number; processados?: number; referencia_data?: string } | null;
+      toast.success(
+        `Reprocessado ${ano}/B${bimestre} (${d?.referencia_data ?? "—"}): ${d?.salvos ?? 0} salvos / ${d?.ignorados ?? 0} ignorados`,
+      );
+      setReprocOpen(false);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao reprocessar período");
     } finally {
       setRunning(null);
     }
@@ -228,19 +305,31 @@ export function IntegracoesManager() {
                     {i.total_registros_importados}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
-                      onClick={() => void executar(i)}
-                    >
-                      {running === i.id ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
-                        <Play className="mr-2 h-3 w-3" />
-                      )}
-                      Executar
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
+                        onClick={() => void executar(i)}
+                      >
+                        {running === i.id ? (
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Play className="mr-2 h-3 w-3" />
+                        )}
+                        Executar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={running === i.id || !FUNCAO_POR_NOME[i.nome]}
+                        onClick={() => abrirReproc(i)}
+                        title="Reprocessar período específico"
+                      >
+                        <RotateCcw className="mr-2 h-3 w-3" />
+                        Reprocessar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -356,6 +445,77 @@ export function IntegracoesManager() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de reprocessamento */}
+      <Dialog open={reprocOpen} onOpenChange={setReprocOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reprocessar período</DialogTitle>
+            <DialogDescription>
+              Reexecuta {reprocIntegrador?.nome} para o tenant e período informados.
+              Existentes serão sobrescritos via upsert.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reproc-tenant">Tenant</Label>
+              <Select value={reprocTenantId} onValueChange={setReprocTenantId}>
+                <SelectTrigger id="reproc-tenant">
+                  <SelectValue placeholder="Selecione um tenant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenantsList.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.nome} <span className="text-xs text-muted-foreground">({t.tipo})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="reproc-ano">Exercício (ano)</Label>
+                <Input
+                  id="reproc-ano"
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  value={reprocAno}
+                  onChange={(e) => setReprocAno(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reproc-bim">Bimestre</Label>
+                <Select value={reprocBimestre} onValueChange={setReprocBimestre}>
+                  <SelectTrigger id="reproc-bim">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map((b) => (
+                      <SelectItem key={b} value={String(b)}>
+                        {b}º bimestre
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Para municípios, o tenant deve ter <code>ibge_codigo</code> preenchido.
+              Para o estado, usa-se id_ente=15 (PA) por padrão quando não houver código IBGE.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReprocOpen(false)} disabled={running !== null}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void executarReproc()} disabled={running !== null}>
+              {running !== null && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reprocessar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

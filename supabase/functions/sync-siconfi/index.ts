@@ -202,26 +202,55 @@ function extrairKpisPorFuncao(items: SiconfiItem[], tenantId: string, refDate: s
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Body opcional. Aceita:
+  //   { tenant_id?: string, exercicio?: number, bimestre?: 1..6 }
+  // - tenant_id: força um tenant específico (estado ou município que tenha id_ente IBGE em config).
+  //   Se omitido, resolve dinamicamente o Estado do Pará.
+  // - exercicio + bimestre: reprocessa um período exato. Se omitidos, usa fallback automático.
+  let body: { tenant_id?: string; exercicio?: number; bimestre?: number } = {};
+  if (req.method === "POST") {
+    try {
+      const txt = await req.text();
+      if (txt) body = JSON.parse(txt);
+    } catch {
+      // body inválido — segue com defaults
+    }
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Resolver tenant do Estado do Pará dinamicamente.
-  // Critério: tipo='estado' E (estado='PA' OU slug ILIKE '%para%').
-  // Mais robusto do que depender de um secret estático — funciona mesmo se o
-  // tenant for renomeado/recriado.
-  const { data: tenantRow, error: tenantErr } = await supabase
-    .from("tenants")
-    .select("id, nome, slug, estado")
-    .eq("tipo", "estado")
-    .or("estado.eq.PA,slug.ilike.%para%")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  // Resolver tenant: se body.tenant_id fornecido, usa ele; senão Estado do Pará dinâmico.
+  let tenantRow: { id: string; nome: string; slug?: string; estado?: string; tipo?: string; ibge_codigo?: string | number | null } | null = null;
+  let tenantErr: { message: string } | null = null;
+
+  if (body.tenant_id) {
+    const r = await supabase
+      .from("tenants")
+      .select("id, nome, slug, estado, tipo, ibge_codigo")
+      .eq("id", body.tenant_id)
+      .maybeSingle();
+    tenantRow = r.data;
+    tenantErr = r.error;
+  } else {
+    const r = await supabase
+      .from("tenants")
+      .select("id, nome, slug, estado, tipo, ibge_codigo")
+      .eq("tipo", "estado")
+      .or("estado.eq.PA,slug.ilike.%para%")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    tenantRow = r.data;
+    tenantErr = r.error;
+  }
 
   if (tenantErr || !tenantRow?.id) {
-    const msg = tenantErr?.message ?? "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').";
+    const msg = tenantErr?.message ?? (body.tenant_id
+      ? `Tenant '${body.tenant_id}' não encontrado.`
+      : "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').");
     console.error("[siconfi] resolução de tenant falhou:", msg);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
@@ -229,7 +258,12 @@ Deno.serve(async (req) => {
     });
   }
   const tenantId = tenantRow.id;
-  console.log(`[siconfi] tenant estadual resolvido: ${tenantRow.nome} (${tenantId})`);
+  // id_ente IBGE: 15 = governo estadual PA. Para municípios, usa ibge_codigo do tenant.
+  // Para tenant estadual sem ibge_codigo definido, default 15 (PA).
+  const idEnte = tenantRow.tipo === "municipio" && tenantRow.ibge_codigo
+    ? String(tenantRow.ibge_codigo)
+    : String(tenantRow.ibge_codigo ?? "15");
+  console.log(`[siconfi] tenant resolvido: ${tenantRow.nome} (${tenantId}), tipo=${tenantRow.tipo}, id_ente=${idEnte}`);
 
   // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
   let integradorId: string | null = null;
@@ -279,43 +313,69 @@ Deno.serve(async (req) => {
   const logId = log?.id ?? null;
 
   try {
-    // Tenta primeiro o período-alvo (recente). Se vier vazio (dados ainda não
-    // publicados pelo Tesouro), faz fallback regredindo bimestres até achar
-    // dados ou esgotar 6 tentativas (~1 ano).
+    // Período: se body trouxer exercicio+bimestre, reprocessa esse período exato
+    // (sem fallback). Caso contrário, usa o último bimestre fechado e regride
+    // até 6 tentativas se vier vazio.
     let ano = 0, bimestre = 0, refDate = "";
     let items: SiconfiItem[] = [];
-    const alvo = calcularPeriodoAlvo();
-    let tentativaAno = alvo.ano;
-    let tentativaBim = alvo.bimestre;
 
-    for (let i = 0; i < 6 && items.length === 0; i++) {
-      console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+    const periodoExplicito =
+      typeof body.exercicio === "number" &&
+      typeof body.bimestre === "number" &&
+      body.bimestre >= 1 && body.bimestre <= 6;
+
+    if (periodoExplicito) {
+      const exer = body.exercicio!;
+      const bim = body.bimestre!;
+      console.log(`[siconfi] período explícito: exercício=${exer}, bimestre=${bim}`);
       const resp = await fetchSiconfi({
-        an_exercicio: String(tentativaAno),
-        nr_periodo: String(tentativaBim),
+        an_exercicio: String(exer),
+        nr_periodo: String(bim),
         co_tipo_demonstrativo: "RREO",
-        id_ente: "15", // UF Pará (governo estadual)
+        id_ente: idEnte,
       });
-      if ((resp.items?.length ?? 0) > 0) {
-        items = resp.items!;
-        ano = tentativaAno;
-        bimestre = tentativaBim;
-        // referencia_data = último dia do bimestre encontrado
-        refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
-        console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
-        break;
+      if ((resp.items?.length ?? 0) === 0) {
+        throw new Error(
+          `SICONFI não retornou dados para id_ente=${idEnte}, exercício=${exer}, bimestre=${bim}. Verifique se o período já foi publicado pelo Tesouro.`,
+        );
       }
-      // Regride 1 bimestre
-      tentativaBim--;
-      if (tentativaBim < 1) {
-        tentativaBim = 6;
-        tentativaAno--;
-      }
-      await new Promise((r) => setTimeout(r, 1100));
-    }
+      items = resp.items!;
+      ano = exer;
+      bimestre = bim;
+      refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+      console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+    } else {
+      const alvo = calcularPeriodoAlvo();
+      let tentativaAno = alvo.ano;
+      let tentativaBim = alvo.bimestre;
 
-    if (items.length === 0) {
-      throw new Error("SICONFI não retornou dados para o Pará nos últimos 6 bimestres.");
+      for (let i = 0; i < 6 && items.length === 0; i++) {
+        console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+        const resp = await fetchSiconfi({
+          an_exercicio: String(tentativaAno),
+          nr_periodo: String(tentativaBim),
+          co_tipo_demonstrativo: "RREO",
+          id_ente: idEnte,
+        });
+        if ((resp.items?.length ?? 0) > 0) {
+          items = resp.items!;
+          ano = tentativaAno;
+          bimestre = tentativaBim;
+          refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+          console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+          break;
+        }
+        tentativaBim--;
+        if (tentativaBim < 1) {
+          tentativaBim = 6;
+          tentativaAno--;
+        }
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+
+      if (items.length === 0) {
+        throw new Error(`SICONFI não retornou dados para id_ente=${idEnte} nos últimos 6 bimestres.`);
+      }
     }
 
     const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
