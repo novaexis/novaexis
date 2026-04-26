@@ -25,6 +25,7 @@ import { Route as PrefeitoRelatoriosRouteImport } from './routes/prefeito.relato
 import { Route as PrefeitoKpisSiconfiRouteImport } from './routes/prefeito.kpis-siconfi'
 import { Route as PrefeitoIntegracoesRouteImport } from './routes/prefeito.integracoes'
 import { Route as PrefeitoIaRouteImport } from './routes/prefeito.ia'
+import { Route as PrefeitoCredenciaisRouteImport } from './routes/prefeito.credenciais'
 import { Route as PrefeitoCaptacaoRouteImport } from './routes/prefeito.captacao'
 import { Route as PrefeitoBenchmarkRouteImport } from './routes/prefeito.benchmark'
 import { Route as GovernadorMunicipiosRouteImport } from './routes/governador.municipios'
@@ -125,6 +126,11 @@ const PrefeitoIntegracoesRoute = PrefeitoIntegracoesRouteImport.update({
 const PrefeitoIaRoute = PrefeitoIaRouteImport.update({
   id: '/ia',
   path: '/ia',
+  getParentRoute: () => PrefeitoRoute,
+} as any)
+const PrefeitoCredenciaisRoute = PrefeitoCredenciaisRouteImport.update({
+  id: '/credenciais',
+  path: '/credenciais',
   getParentRoute: () => PrefeitoRoute,
 } as any)
 const PrefeitoCaptacaoRoute = PrefeitoCaptacaoRouteImport.update({
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/credenciais': typeof PrefeitoCredenciaisRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/credenciais': typeof PrefeitoCredenciaisRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/governador/municipios': typeof GovernadorMunicipiosRoute
   '/prefeito/benchmark': typeof PrefeitoBenchmarkRoute
   '/prefeito/captacao': typeof PrefeitoCaptacaoRoute
+  '/prefeito/credenciais': typeof PrefeitoCredenciaisRoute
   '/prefeito/ia': typeof PrefeitoIaRoute
   '/prefeito/integracoes': typeof PrefeitoIntegracoesRoute
   '/prefeito/kpis-siconfi': typeof PrefeitoKpisSiconfiRouteWithChildren
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/credenciais'
     | '/prefeito/ia'
     | '/prefeito/integracoes'
     | '/prefeito/kpis-siconfi'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/credenciais'
     | '/prefeito/ia'
     | '/prefeito/integracoes'
     | '/prefeito/kpis-siconfi'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/governador/municipios'
     | '/prefeito/benchmark'
     | '/prefeito/captacao'
+    | '/prefeito/credenciais'
     | '/prefeito/ia'
     | '/prefeito/integracoes'
     | '/prefeito/kpis-siconfi'
@@ -602,6 +614,13 @@ declare module '@tanstack/react-router' {
       path: '/ia'
       fullPath: '/prefeito/ia'
       preLoaderRoute: typeof PrefeitoIaRouteImport
+      parentRoute: typeof PrefeitoRoute
+    }
+    '/prefeito/credenciais': {
+      id: '/prefeito/credenciais'
+      path: '/credenciais'
+      fullPath: '/prefeito/credenciais'
+      preLoaderRoute: typeof PrefeitoCredenciaisRouteImport
       parentRoute: typeof PrefeitoRoute
     }
     '/prefeito/captacao': {
@@ -867,6 +886,7 @@ const PrefeitoSocialRouteWithChildren = PrefeitoSocialRoute._addFileChildren(
 interface PrefeitoRouteChildren {
   PrefeitoBenchmarkRoute: typeof PrefeitoBenchmarkRoute
   PrefeitoCaptacaoRoute: typeof PrefeitoCaptacaoRoute
+  PrefeitoCredenciaisRoute: typeof PrefeitoCredenciaisRoute
   PrefeitoIaRoute: typeof PrefeitoIaRoute
   PrefeitoIntegracoesRoute: typeof PrefeitoIntegracoesRoute
   PrefeitoKpisSiconfiRoute: typeof PrefeitoKpisSiconfiRouteWithChildren
@@ -879,6 +899,7 @@ interface PrefeitoRouteChildren {
 const PrefeitoRouteChildren: PrefeitoRouteChildren = {
   PrefeitoBenchmarkRoute: PrefeitoBenchmarkRoute,
   PrefeitoCaptacaoRoute: PrefeitoCaptacaoRoute,
+  PrefeitoCredenciaisRoute: PrefeitoCredenciaisRoute,
   PrefeitoIaRoute: PrefeitoIaRoute,
   PrefeitoIntegracoesRoute: PrefeitoIntegracoesRoute,
   PrefeitoKpisSiconfiRoute: PrefeitoKpisSiconfiRouteWithChildren,
