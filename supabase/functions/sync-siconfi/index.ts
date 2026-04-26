@@ -312,43 +312,69 @@ Deno.serve(async (req) => {
   const logId = log?.id ?? null;
 
   try {
-    // Tenta primeiro o período-alvo (recente). Se vier vazio (dados ainda não
-    // publicados pelo Tesouro), faz fallback regredindo bimestres até achar
-    // dados ou esgotar 6 tentativas (~1 ano).
+    // Período: se body trouxer exercicio+bimestre, reprocessa esse período exato
+    // (sem fallback). Caso contrário, usa o último bimestre fechado e regride
+    // até 6 tentativas se vier vazio.
     let ano = 0, bimestre = 0, refDate = "";
     let items: SiconfiItem[] = [];
-    const alvo = calcularPeriodoAlvo();
-    let tentativaAno = alvo.ano;
-    let tentativaBim = alvo.bimestre;
 
-    for (let i = 0; i < 6 && items.length === 0; i++) {
-      console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+    const periodoExplicito =
+      typeof body.exercicio === "number" &&
+      typeof body.bimestre === "number" &&
+      body.bimestre >= 1 && body.bimestre <= 6;
+
+    if (periodoExplicito) {
+      const exer = body.exercicio!;
+      const bim = body.bimestre!;
+      console.log(`[siconfi] período explícito: exercício=${exer}, bimestre=${bim}`);
       const resp = await fetchSiconfi({
-        an_exercicio: String(tentativaAno),
-        nr_periodo: String(tentativaBim),
+        an_exercicio: String(exer),
+        nr_periodo: String(bim),
         co_tipo_demonstrativo: "RREO",
-        id_ente: "15", // UF Pará (governo estadual)
+        id_ente: idEnte,
       });
-      if ((resp.items?.length ?? 0) > 0) {
-        items = resp.items!;
-        ano = tentativaAno;
-        bimestre = tentativaBim;
-        // referencia_data = último dia do bimestre encontrado
-        refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
-        console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
-        break;
+      if ((resp.items?.length ?? 0) === 0) {
+        throw new Error(
+          `SICONFI não retornou dados para id_ente=${idEnte}, exercício=${exer}, bimestre=${bim}. Verifique se o período já foi publicado pelo Tesouro.`,
+        );
       }
-      // Regride 1 bimestre
-      tentativaBim--;
-      if (tentativaBim < 1) {
-        tentativaBim = 6;
-        tentativaAno--;
-      }
-      await new Promise((r) => setTimeout(r, 1100));
-    }
+      items = resp.items!;
+      ano = exer;
+      bimestre = bim;
+      refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+      console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+    } else {
+      const alvo = calcularPeriodoAlvo();
+      let tentativaAno = alvo.ano;
+      let tentativaBim = alvo.bimestre;
 
-    if (items.length === 0) {
-      throw new Error("SICONFI não retornou dados para o Pará nos últimos 6 bimestres.");
+      for (let i = 0; i < 6 && items.length === 0; i++) {
+        console.log(`[siconfi] tentando exercício=${tentativaAno}, bimestre=${tentativaBim}`);
+        const resp = await fetchSiconfi({
+          an_exercicio: String(tentativaAno),
+          nr_periodo: String(tentativaBim),
+          co_tipo_demonstrativo: "RREO",
+          id_ente: idEnte,
+        });
+        if ((resp.items?.length ?? 0) > 0) {
+          items = resp.items!;
+          ano = tentativaAno;
+          bimestre = tentativaBim;
+          refDate = new Date(ano, bimestre * 2, 0).toISOString().slice(0, 10);
+          console.log(`[siconfi] dados encontrados: ${items.length} items para ${ano}/B${bimestre}`);
+          break;
+        }
+        tentativaBim--;
+        if (tentativaBim < 1) {
+          tentativaBim = 6;
+          tentativaAno--;
+        }
+        await new Promise((r) => setTimeout(r, 1100));
+      }
+
+      if (items.length === 0) {
+        throw new Error(`SICONFI não retornou dados para id_ente=${idEnte} nos últimos 6 bimestres.`);
+      }
     }
 
     const kpisBalanco = extrairKpisBalanco(items, tenantId, refDate);
