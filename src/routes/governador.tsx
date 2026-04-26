@@ -75,6 +75,7 @@ function GovernadorDashboard() {
   const [repasses, setRepasses] = useState<RepasseItem[]>([]);
   const [comunicados, setComunicados] = useState<ComunicadoBreve[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sincronizando, setSincronizando] = useState(false);
 
   useEffect(() => {
     void load();
@@ -96,9 +97,8 @@ function GovernadorDashboard() {
     const [{ data: kpisData }, { data: repassesData }, { data: comunicadosData }] = await Promise.all([
       supabase
         .from("kpis")
-        .select("secretaria_slug, indicador, valor, unidade, variacao_pct, status, referencia_data")
+        .select("secretaria_slug, indicador, valor, unidade, variacao_pct, status, referencia_data, fonte")
         .eq("tenant_id", tenantId)
-        .eq("fonte", "seed")
         .order("referencia_data", { ascending: false }),
       supabase
         .from("repasses_estaduais")
@@ -113,10 +113,34 @@ function GovernadorDashboard() {
         .limit(2),
     ]);
 
-    setKpis((kpisData ?? []) as KPIRow[]);
+    // Preferir dado real (fonte api:*) sobre seed para mesmo (slug,indicador).
+    const todos = (kpisData ?? []) as KPIRow[];
+    const escolhidos = new Map<string, KPIRow>();
+    for (const k of todos) {
+      const chave = `${k.secretaria_slug}::${k.indicador}`;
+      const atual = escolhidos.get(chave);
+      const isReal = !!k.fonte && k.fonte.startsWith("api:");
+      if (!atual) escolhidos.set(chave, k);
+      else if (isReal && !(atual.fonte ?? "").startsWith("api:")) escolhidos.set(chave, k);
+    }
+    setKpis(Array.from(escolhidos.values()));
     setRepasses((repassesData ?? []) as RepasseItem[]);
     setComunicados((comunicadosData ?? []) as ComunicadoBreve[]);
     setLoading(false);
+  }
+
+  async function sincronizarAgora() {
+    setSincronizando(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-estadual-completo", { body: {} });
+      if (error) throw error;
+      toast.success(`Sincronização concluída: ${data?.total_kpis_salvos ?? 0} KPIs atualizados`);
+      await load();
+    } catch (err) {
+      toast.error(`Erro na sincronização: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSincronizando(false);
+    }
   }
 
   const kpisPrincipais = useMemo(() => {
