@@ -44,3 +44,7 @@ verify_jwt = true
 
 [functions.demo-snapshot]
 verify_jwt = false
+
+[functions.sync-siconfi]
+verify_jwt = false
+
