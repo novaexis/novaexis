@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  for (const mun of municipios) {
+  await Promise.all(municipios.map(async (mun) => {
     const t0 = Date.now();
     const errosMun: string[] = [];
     let kpisMun = 0;
