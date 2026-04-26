@@ -447,6 +447,77 @@ export function IntegracoesManager() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de reprocessamento */}
+      <Dialog open={reprocOpen} onOpenChange={setReprocOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reprocessar período</DialogTitle>
+            <DialogDescription>
+              Reexecuta {reprocIntegrador?.nome} para o tenant e período informados.
+              Existentes serão sobrescritos via upsert.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reproc-tenant">Tenant</Label>
+              <Select value={reprocTenantId} onValueChange={setReprocTenantId}>
+                <SelectTrigger id="reproc-tenant">
+                  <SelectValue placeholder="Selecione um tenant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenantsList.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.nome} <span className="text-xs text-muted-foreground">({t.tipo})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="reproc-ano">Exercício (ano)</Label>
+                <Input
+                  id="reproc-ano"
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  value={reprocAno}
+                  onChange={(e) => setReprocAno(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reproc-bim">Bimestre</Label>
+                <Select value={reprocBimestre} onValueChange={setReprocBimestre}>
+                  <SelectTrigger id="reproc-bim">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map((b) => (
+                      <SelectItem key={b} value={String(b)}>
+                        {b}º bimestre
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Para municípios, o tenant deve ter <code>config.id_ente_ibge</code> configurado.
+              Para o estado, usa-se id_ente=15 (PA) por padrão.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReprocOpen(false)} disabled={running !== null}>
+              Cancelar
+            </Button>
+            <Button onClick={() => void executarReproc()} disabled={running !== null}>
+              {running !== null && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reprocessar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
