@@ -195,13 +195,29 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const tenantId = Deno.env.get("PARA_STATE_TENANT_ID");
-  if (!tenantId) {
-    return new Response(
-      JSON.stringify({ error: "PARA_STATE_TENANT_ID não configurado" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+  // Resolver tenant do Estado do Pará dinamicamente.
+  // Critério: tipo='estado' E (estado='PA' OU slug ILIKE '%para%').
+  // Mais robusto do que depender de um secret estático — funciona mesmo se o
+  // tenant for renomeado/recriado.
+  const { data: tenantRow, error: tenantErr } = await supabase
+    .from("tenants")
+    .select("id, nome, slug, estado")
+    .eq("tipo", "estado")
+    .or("estado.eq.PA,slug.ilike.%para%")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (tenantErr || !tenantRow?.id) {
+    const msg = tenantErr?.message ?? "Tenant 'Estado do Pará' não encontrado (tipo='estado', estado='PA').";
+    console.error("[siconfi] resolução de tenant falhou:", msg);
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+  const tenantId = tenantRow.id;
+  console.log(`[siconfi] tenant estadual resolvido: ${tenantRow.nome} (${tenantId})`);
 
   // Garantir registro de integrador (idempotente: 1 por tenant + tipo + nome)
   let integradorId: string | null = null;
