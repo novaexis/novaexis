@@ -6,7 +6,9 @@ import { KPICard } from "@/components/KPICard";
 import { ChatIAGovernador } from "@/components/governador/ChatIAGovernador";
 import { RepasesEstaduais, type RepasseItem } from "@/components/governador/RepasesEstaduais";
 import { Card } from "@/components/ui/card";
-import { Loader2, Heart, GraduationCap, Wallet, ShieldAlert, HardHat, HandHeart, Megaphone, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Loader2, Heart, GraduationCap, Wallet, ShieldAlert, HardHat, HandHeart, Megaphone, Building2, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/governador")({
   head: () => ({
