@@ -10,6 +10,7 @@ import {
   FileText,
   Plug,
   LineChart,
+  KeyRound,
   Settings,
   LogOut,
   Menu,
@@ -53,6 +54,7 @@ const NAV: NavItem[] = [
   { to: "/prefeito/social", label: "Social Intelligence", icon: Radio },
   { to: "/prefeito/relatorios", label: "Relatórios", icon: FileText },
   { to: "/prefeito/integracoes", label: "Integrações", icon: Plug },
+  { to: "/prefeito/credenciais", label: "Credenciais APIs", icon: KeyRound },
 ];
 
 interface Props {
