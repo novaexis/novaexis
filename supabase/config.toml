@@ -57,3 +57,6 @@ verify_jwt = false
 [functions.sync-municipal-completo]
 verify_jwt = false
 
+[functions.sync-saude-municipal]
+verify_jwt = false
+
