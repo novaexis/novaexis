@@ -503,8 +503,8 @@ export function IntegracoesManager() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Para municípios, o tenant deve ter <code>config.id_ente_ibge</code> configurado.
-              Para o estado, usa-se id_ente=15 (PA) por padrão.
+              Para municípios, o tenant deve ter <code>ibge_codigo</code> preenchido.
+              Para o estado, usa-se id_ente=15 (PA) por padrão quando não houver código IBGE.
             </p>
           </div>
           <DialogFooter>
