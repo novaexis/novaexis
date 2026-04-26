@@ -10,7 +10,7 @@
  * Rate limit: ~1 req/s entre chamadas
  *
  * Indicadores extraídos (todos vinculados ao tenant do Estado do Pará,
- * passado em PARA_STATE_TENANT_ID):
+ * resolvido dinamicamente da tabela `tenants` via tipo='estado' + estado='PA'):
  *   - Receita Realizada (R$)                 — secretaria 'financas'
  *   - Despesa Empenhada (R$)                 — secretaria 'financas'
  *   - Execução Orçamentária (%)              — secretaria 'financas'
